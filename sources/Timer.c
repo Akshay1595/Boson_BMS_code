@@ -30,12 +30,12 @@ void TMR_Init() {
 	EDIS;
 
 	// Setup clock division // approximately 1uS per timer cycle
-	EPwm1Regs.TBCTL.bit.CLKDIV    = 0x03; // divide by 32
-	EPwm1Regs.TBCTL.bit.HSPCLKDIV = 0x06; // divide by 2
-	                                     // total division is 32*2=64
-	EPwm2Regs.TBCTL.bit.CLKDIV    = 0x03; // divide by 32
+	EPwm1Regs.TBCTL.bit.CLKDIV    = 0x01; // divide by 2
+	EPwm1Regs.TBCTL.bit.HSPCLKDIV = 0x06; // divide by 6
+	                                     // total division is 6*2=12
+	EPwm2Regs.TBCTL.bit.CLKDIV    = 0x01; // divide by 32
 	EPwm2Regs.TBCTL.bit.HSPCLKDIV = 0x06; // divide by 2
-	                                     // total division is 32*2=64
+	                                     // total division is 6*2=12
     // Setup Sync
 	EPwm1Regs.TBCTL.bit.SYNCOSEL = 0;  // Pass through
 	EPwm2Regs.TBCTL.bit.SYNCOSEL = 0;  // Pass through

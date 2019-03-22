@@ -84,6 +84,7 @@
 #include "ISL94212.h"
 #include "Timer.h"
 #include "SPI.h"
+#include "device_implementation.h"
 
 //
 // Defines
@@ -136,8 +137,18 @@ void main(void)
 
     InitializeISLParameters(NumISLDevices);                                 // Initialize the default values into the ISL Registers
 
+    Uint8 i;
+
+    for( i = 0; i< NumISLDevices ; i++)
+    {
+        write_undervoltage_threshold(i, 2.5);
+        DELAY_S(1);
+        balance_all(i, 0x0FFF);
+        DELAY_S(1);
+    }
     while(1) {
              GetISLData(NumISLDevices);
+
     }
 
     can_init_GPIO();
