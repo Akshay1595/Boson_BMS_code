@@ -165,12 +165,26 @@ void write_overvoltage_threshold(Uint8 device,float ov_voltage)
     ISL_WriteRegister(device,2,0x10,OverVoltageLimit);                                           // Set OverVoltage Limit
 }
 
-float get_float_value_for_voltage(Uint16 voltage)
+float get_float_value_for_voltage(Uint16 voltage,CELL_OR_PACK cell_or_pack)
 {
+    //refer to datasheet for formulae
+
     float float_v = (float)0;
+
+    if (cell_or_pack == cell)
+    {
         if(voltage >= 8192)//negative voltage value
             float_v = ((float)((voltage - 16384) * 5)) /(float) 8192;
         else
-            float_v = (float)voltage /(float) 8192;
+            float_v = ((float)voltage * 5) /(float) 8192;
+    }
+    else
+    {
+        if(voltage >= 8192)//negative voltage value
+            float_v = ((float)((voltage - 16384) * 2.5 * (15.9350784))) /(float) 8192;
+        else
+            float_v = ((float)voltage * 2.5 * (15.9350784)) /(float) 8192;
+
+    }
     return float_v;
 }

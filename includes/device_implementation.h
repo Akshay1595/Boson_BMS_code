@@ -31,10 +31,16 @@ typedef enum  {
     C12V
 }CELL_VOLTAGE_NUMBERING;
 
+typedef enum{
+    cell = 0,
+    pack = 1
+}CELL_OR_PACK;
+
+
 extern Uint16 NowCurrent;
 
 Uint16 read_voltage(Uint8 device,Uint8 cell_no);
-float get_float_value_for_voltage(Uint16 voltage);
+float get_float_value_for_voltage(Uint16 voltage, CELL_OR_PACK cell_or_pack);
 Uint16 read_current(void);
 Uint16 get_current_soc(void);
 void balance_on(Uint8 device,Uint8 cell_no);
