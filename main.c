@@ -74,6 +74,7 @@
 //
 #include "F28x_Project.h"     // Device Headerfile and Examples Include File
 #include <stdint.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include "inc/hw_types.h"
 #include "inc/hw_memmap.h"
@@ -85,7 +86,7 @@
 #include "Timer.h"
 #include "SPI.h"
 #include "device_implementation.h"
-
+#include "uart.h"
 //
 // Defines
 //
@@ -121,8 +122,11 @@ void main(void)
 
     Setup();
 
+    uart_string_newline("Setup Complete!\n");
     TMR_Init();
+    uart_string_newline("Timer Setup Complete!\n");
     SPI_Init();
+    uart_string_newline("SPI Setup Complete!\n");
     //SPI_Test();
     ResetISR();
 
@@ -130,22 +134,23 @@ void main(void)
 
     Did_it_blend = ISL_Init_Retry(2);
 
+    if (Did_it_blend == True)
+        uart_string_newline("Yes it has connected Successfully\n");
+    else
+    {
+        uart_string_newline("I couldn't find ISL devices!\n");
+        while(1);
+    }
 
     ISL_EnableReceiveCallback();                                            // Enable the recieve call back
     ISL_SetReceiveCallback(RecieveHandler);                                 // Set the recievehandler to call when data is recieved from the daisy chain
     NumISLDevices=NumDevices();
 
+    if(NumISLDevices == 4)
+    uart_string_newline("Totally there are 4 ISL devices!\n");
+
     InitializeISLParameters(NumISLDevices);                                 // Initialize the default values into the ISL Registers
 
-    Uint8 i;
-
-    for( i = 0; i< NumISLDevices ; i++)
-    {
-        write_undervoltage_threshold(i, 2.5);
-        DELAY_S(1);
-        balance_all(i, 0x0FFF);
-        DELAY_S(1);
-    }
     while(1) {
              GetISLData(NumISLDevices);
 

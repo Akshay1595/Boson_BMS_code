@@ -14,7 +14,8 @@ C_SRCS += \
 ../sources/adc.c \
 ../sources/device_implementation.c \
 ../sources/my_can.c \
-../sources/spi.c 
+../sources/spi.c \
+../sources/uart.c 
 
 C_DEPS += \
 ./sources/CommandPriorityQueue.d \
@@ -25,7 +26,8 @@ C_DEPS += \
 ./sources/adc.d \
 ./sources/device_implementation.d \
 ./sources/my_can.d \
-./sources/spi.d 
+./sources/spi.d \
+./sources/uart.d 
 
 OBJS += \
 ./sources/CommandPriorityQueue.obj \
@@ -36,7 +38,8 @@ OBJS += \
 ./sources/adc.obj \
 ./sources/device_implementation.obj \
 ./sources/my_can.obj \
-./sources/spi.obj 
+./sources/spi.obj \
+./sources/uart.obj 
 
 OBJS__QUOTED += \
 "sources\CommandPriorityQueue.obj" \
@@ -47,7 +50,8 @@ OBJS__QUOTED += \
 "sources\adc.obj" \
 "sources\device_implementation.obj" \
 "sources\my_can.obj" \
-"sources\spi.obj" 
+"sources\spi.obj" \
+"sources\uart.obj" 
 
 C_DEPS__QUOTED += \
 "sources\CommandPriorityQueue.d" \
@@ -58,7 +62,8 @@ C_DEPS__QUOTED += \
 "sources\adc.d" \
 "sources\device_implementation.d" \
 "sources\my_can.d" \
-"sources\spi.d" 
+"sources\spi.d" \
+"sources\uart.d" 
 
 C_SRCS__QUOTED += \
 "../sources/CommandPriorityQueue.c" \
@@ -69,6 +74,7 @@ C_SRCS__QUOTED += \
 "../sources/adc.c" \
 "../sources/device_implementation.c" \
 "../sources/my_can.c" \
-"../sources/spi.c" 
+"../sources/spi.c" \
+"../sources/uart.c" 
 
 

@@ -69,7 +69,7 @@ void SPI_Init() {
     SpiaRegs.SPICCR.all =0x0007;          // Reset on, rising edge xmit, 8-bit char bits
     SpiaRegs.SPICTL.all =0x000E;          // Enable master mode, normal 1.5 phase,
                                           // enable talk, and SPI int disabled.
-    SpiaRegs.SPIBRR.all =0x0005;              // divide by 5+1 was  12/6 = 2MHz
+    SpiaRegs.SPIBRR.all =0x000B;              // divide by 11+1 was  50/12 ~ 4MHz
     SpiaRegs.SPICCR.all =0x0087;          // Relinquish SPI from Reset
     SpiaRegs.SPIPRI.bit.FREE = 1;         // Set so breakpoints don't disturb xmission
 
