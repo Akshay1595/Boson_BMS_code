@@ -10,8 +10,76 @@
 #include "F28x_project.h"
 #include "device_implementation.h"
 #include "ISL94212.h"
+#include "General.h"
+#include "uart.h"
+#include <math.h>
 
 extern Uint8 NumISLDevices;
+
+double ConvertTemperature(Uint16 Raw){
+    double Vin_by_Vo = (double) 0x3FFF/(double)Raw;                                                               // Tempreg pulse is of 2.5V
+    double r1 = 40.2 * 1000;
+    double Rt = r1 / (Vin_by_Vo - 1);
+    double logRt = log(Rt);
+    double c1 = 1.009249522e-03, c2 = 2.378405444e-04, c3 = 2.019202697e-07;
+    double Tc,T = (1.0 / (c1 + c2*logRt + c3*logRt*logRt*logRt));
+    Tc = T - 273.15;
+    return Tc;                                                                      // Use the Lookup table
+}
+
+double read_temp(Uint8 device,Uint8 temp_sensor_no)
+{
+    if ((device > NumISLDevices) || (temp_sensor_no > 4))               // there are only 4 temp sensors available
+    {
+        //error condition return doing nothing
+        return 0;
+    }
+    double f_temp;
+    Uint16 temp_V;
+    ISL_DEVICE* ISLData;
+    int16 change_from_normal_value;
+    ISLData = GetISLDevices(device);
+    switch(temp_sensor_no)
+    {
+        case 0:
+            temp_V = (*ISLData).PAGE1.TEMP.ICT;
+            change_from_normal_value =  temp_V  - 9180;                   //9180 is value at 25 degree celcius
+            if(change_from_normal_value <0)
+                f_temp = 25.00 - ( abs(change_from_normal_value)/(141.23)); // dividing it by 141.23 since 9180/65  65? range is from -40 to 85 DegreeC
+            else
+                f_temp = 25.00 + (abs(change_from_normal_value)/(141.23));
+            return f_temp;
+
+        case 1:
+            temp_V = (*ISLData).PAGE1.TEMP.ET1V;
+            f_temp = ConvertTemperature(temp_V);
+            return f_temp;
+
+        case 2:
+            temp_V = (*ISLData).PAGE1.TEMP.ET2V;
+            f_temp = ConvertTemperature(temp_V);
+            return f_temp;
+
+        case 3:
+            temp_V = (*ISLData).PAGE1.TEMP.ET3V;
+            f_temp = ConvertTemperature(temp_V);
+            return f_temp;
+
+        case 4:
+            temp_V = (*ISLData).PAGE1.TEMP.ET4V;
+            f_temp = ConvertTemperature(temp_V);
+            return f_temp;
+
+    }
+
+        /*
+    uart_string_newline("Temp Value I am seeing is: ");
+    Uint8 buffer[20];
+    float_to_ascii(temp_value, buffer);
+    uart_string_newline(buffer);
+    */
+    return f_temp;
+}
 
 Uint16 read_voltage(Uint8 device,Uint8 cell_no)
 {
@@ -187,4 +255,53 @@ float get_float_value_for_voltage(Uint16 voltage,CELL_OR_PACK cell_or_pack)
 
     }
     return float_v;
+}
+
+void log_data()
+{
+    Uint8 NumOfISLDevices = NumDevices();
+    Uint8 CurrentDevice;
+    ISL_DEVICE* ISLData;
+    uart_string_newline("----------------------------------------------Cell Data now----------------------------------------------");
+    for(CurrentDevice=1 ; CurrentDevice< NumOfISLDevices; CurrentDevice++)
+    {
+        uart_string_newline("Device ");
+        Uint8 buf[20]={};
+        my_itoa(CurrentDevice-1, buf);
+        uart_string(buf);
+
+        uart_string_newline("Cell Voltages");
+        uart_string_newline("Vb\tVc1\tVc2\tVc3\tVc4\tVc5\tVc6\tVc7\tVc8\tVc9\tVc10\tVc11\tVc12\r\n");
+
+        Uint16 voltage;
+        float f_voltage;
+        Uint8 cell_no = 0;
+        for(cell_no = 0; cell_no <13; cell_no++)
+        {
+            voltage = read_voltage(CurrentDevice-1, cell_no);
+            if (cell_no == 0)
+                f_voltage = get_float_value_for_voltage(voltage, pack);
+            else
+                f_voltage = get_float_value_for_voltage(voltage, cell);
+
+            float_to_ascii(f_voltage, buf);
+            uart_string(buf);
+            uart_xmit('\t');
+        }
+
+        uart_string_newline("Cell Temperatures");
+        uart_string_newline("Temp_IC\t\tTemp_T1\t\tTemp_t2\t\tTemp_t3\t\tTemp_t3\t\tTemp_t4\r\n");
+
+
+        Uint8 temp_sensor_no = 0;
+        double temp_degreeC;
+        for(temp_sensor_no = 0; temp_sensor_no <5; temp_sensor_no++)
+        {
+            temp_degreeC = read_temp(CurrentDevice,temp_sensor_no);
+            float_to_ascii(temp_degreeC, buf);
+            uart_string(buf);
+            uart_string("\t\t");
+        }
+        uart_string("\r\n");
+    }
 }

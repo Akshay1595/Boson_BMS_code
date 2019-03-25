@@ -122,11 +122,11 @@ void main(void)
 
     Setup();
 
-    uart_string_newline("Setup Complete!\n");
+    uart_string_newline("Setup Complete!");
     TMR_Init();
-    uart_string_newline("Timer Setup Complete!\n");
+    uart_string_newline("Timer Setup Complete!");
     SPI_Init();
-    uart_string_newline("SPI Setup Complete!\n");
+    uart_string_newline("SPI Setup Complete!");
     //SPI_Test();
     ResetISR();
 
@@ -135,10 +135,10 @@ void main(void)
     Did_it_blend = ISL_Init_Retry(2);
 
     if (Did_it_blend == True)
-        uart_string_newline("Yes it has connected Successfully\n");
+        uart_string_newline("Yes it has connected Successfully!");
     else
     {
-        uart_string_newline("I couldn't find ISL devices!\n");
+        uart_string_newline("I couldn't find ISL devices!");
         while(1);
     }
 
@@ -146,14 +146,23 @@ void main(void)
     ISL_SetReceiveCallback(RecieveHandler);                                 // Set the recievehandler to call when data is recieved from the daisy chain
     NumISLDevices=NumDevices();
 
-    if(NumISLDevices == 4)
-    uart_string_newline("Totally there are 4 ISL devices!\n");
+    char _buf[8] = {};
+
+    uart_string("There are ");
+    my_itoa(NumISLDevices, _buf);
+    uart_string(_buf);
+    uart_string(" devices!\r\n");
 
     InitializeISLParameters(NumISLDevices);                                 // Initialize the default values into the ISL Registers
 
+    double temp_value;
+    Uint16 Raw;
+    ISL_DEVICE *ISLData;
+
     while(1) {
              GetISLData(NumISLDevices);
-
+             DELAY_S(1);
+             log_data();
     }
 
     can_init_GPIO();

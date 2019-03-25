@@ -39,6 +39,8 @@ typedef enum{
 
 extern Uint16 NowCurrent;
 
+double ConvertTemperature(Uint16 Raw);
+double read_temp(Uint8 device,Uint8 temp_sensor_no);
 Uint16 read_voltage(Uint8 device,Uint8 cell_no);
 float get_float_value_for_voltage(Uint16 voltage, CELL_OR_PACK cell_or_pack);
 Uint16 read_current(void);

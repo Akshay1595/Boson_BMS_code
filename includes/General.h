@@ -114,7 +114,6 @@ void BalanceCells(Uint16 CurrentDevice);
 void InitializeISLParameters(Uint8 NumDevices);
 void GetISLData(Uint8 NumDevices);
 void TemperatureControl(void);
-Uint8 ConvertTemperature(Uint16 Temp);
 Uint8 GetMin(Uint16* Array, Uint8 Length);
 Uint8 GetMax(Uint16* Array, Uint8 Length);
 Uint16 GetAvg(Uint16* Array, Uint8 Length);
