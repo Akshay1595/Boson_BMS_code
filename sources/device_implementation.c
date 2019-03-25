@@ -263,11 +263,11 @@ void log_data()
     Uint8 CurrentDevice;
     ISL_DEVICE* ISLData;
     uart_string_newline("----------------------------------------------Cell Data now----------------------------------------------");
-    for(CurrentDevice=1 ; CurrentDevice< NumOfISLDevices; CurrentDevice++)
+    for(CurrentDevice=0 ; CurrentDevice < NumOfISLDevices; CurrentDevice++)
     {
         uart_string_newline("Device ");
         Uint8 buf[20]={};
-        my_itoa(CurrentDevice-1, buf);
+        my_itoa(CurrentDevice, buf);
         uart_string(buf);
 
         uart_string_newline("Cell Voltages");
@@ -278,7 +278,7 @@ void log_data()
         Uint8 cell_no = 0;
         for(cell_no = 0; cell_no <13; cell_no++)
         {
-            voltage = read_voltage(CurrentDevice-1, cell_no);
+            voltage = read_voltage(CurrentDevice, cell_no);
             if (cell_no == 0)
                 f_voltage = get_float_value_for_voltage(voltage, pack);
             else
@@ -290,7 +290,7 @@ void log_data()
         }
 
         uart_string_newline("Cell Temperatures");
-        uart_string_newline("Temp_IC\t\tTemp_T1\t\tTemp_t2\t\tTemp_t3\t\tTemp_t3\t\tTemp_t4\r\n");
+        uart_string_newline("Temp_IC\t\tTemp_T1\t\tTemp_t2\t\tTemp_t3\t\tTemp_t4\r\n");
 
 
         Uint8 temp_sensor_no = 0;
