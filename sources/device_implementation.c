@@ -292,17 +292,14 @@ void log_data()
     Uint8 NumOfISLDevices = NumDevices();
     Uint8 CurrentDevice;
     ISL_DEVICE* ISLData;
-    uart_string_newline("----------------------------------------------Cell Data now----------------------------------------------");
+    uart_string("\r\n");
+    uart_string("Device,");uart_string("Param,");uart_string("PackV,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11,C12\r\n");
+
     for(CurrentDevice=0 ; CurrentDevice < NumOfISLDevices; CurrentDevice++)
     {
-        uart_string_newline("Device ");
         Uint8 buf[20]={};
         my_itoa(CurrentDevice, buf);
-        uart_string(buf);
-
-        uart_string_newline("Cell Voltages");
-        uart_string_newline("Vb\tVc1\tVc2\tVc3\tVc4\tVc5\tVc6\tVc7\tVc8\tVc9\tVc10\tVc11\tVc12\r\n");
-
+        uart_string(buf);uart_xmit(',');uart_string("Cell_Voltages,");
         Uint16 voltage;
         float f_voltage;
         Uint8 cell_no = 0;
@@ -316,12 +313,11 @@ void log_data()
 
             float_to_ascii(f_voltage, buf);
             uart_string(buf);
-            uart_xmit('\t');
+            uart_xmit(',');
         }
-
-        uart_string_newline("Cell Temperatures");
-        uart_string_newline("Temp_IC\t\tTemp_T1\t\tTemp_t2\t\tTemp_t3\t\tTemp_t4\r\n");
-
+        uart_string("\r\n");
+        my_itoa(CurrentDevice, buf);
+        uart_string(buf);uart_xmit(',');uart_string("Cell_Temp,");
 
         Uint8 temp_sensor_no = 0;
         double temp_degreeC;
@@ -330,62 +326,63 @@ void log_data()
             temp_degreeC = read_temp(CurrentDevice,temp_sensor_no);
             float_to_ascii(temp_degreeC, buf);
             uart_string(buf);
-            uart_string("\t\t");
+            uart_xmit(',');
         }
 
-        uart_string_newline("UnderVoltage");
-        uart_string_newline("UV1\tUV2\tUV3\tUV4\tUV5\tUV6\tUV7\tUV8\tUV9\tUV10\tUV11\tUV12\r\n");
+
         uart_string("\r\n");
+        my_itoa(CurrentDevice, buf);
+        uart_string(buf);uart_xmit(',');uart_string("UnderVoltage,");
         ISLData = GetISLDevices(CurrentDevice);
         Uint16 fault_data = (*ISLData).PAGE2_1.FAULT.UF.all;
         char i;
         for(i = 0;i<12;i++)
         {
             if(fault_data & (1<<i))
-                uart_string("1\t");
+                uart_string("1,");
             else
-                uart_string("0\t");
+                uart_string("0,");
         }
 
-        uart_string_newline("OverVoltage");
-        uart_string_newline("OV1\tOV2\tOV3\tOV4\tOV5\tOV6\tOV7\tOV8\tOV9\tOV10\tOV11\tOV12\r\n");
         uart_string("\r\n");
+        my_itoa(CurrentDevice, buf);
+        uart_string(buf);uart_xmit(',');uart_string("OverVoltage,");
         ISLData = GetISLDevices(CurrentDevice);
         fault_data = (*ISLData).PAGE2_1.FAULT.OF.all;
         for(i = 11;i>-1;i--)
         {
             if(fault_data & (1<<i))
-                uart_string("1\t");
+                uart_string("1,");
             else
-                uart_string("0\t");
+                uart_string("0,");
         }
 
-        uart_string_newline("OpenWire Fault");
-        uart_string_newline("OW1\tOW2\tOW3\tOW4\tOW5\tOW6\tOW7\tOW8\tOW9\tOW10\tOW11\tOW12\r\n");
         uart_string("\r\n");
+        my_itoa(CurrentDevice, buf);
+        uart_string(buf);uart_xmit(',');uart_string("OpenWire,");
         ISLData = GetISLDevices(CurrentDevice);
         fault_data = (*ISLData).PAGE2_1.FAULT.OC.all;
         for(i = 11;i>-1;i--)
         {
             if(fault_data & (1<<i))
-                uart_string("1\t");
+                uart_string("1,");
             else
-                uart_string("0\t");
+                uart_string("0,");
         }
 
-        uart_string_newline("Over temperature");
-        uart_string_newline("OVT1\tOVT2\tOVT3\tOVT4\tOVT5\tOVT6\tOVT7\tOVT8\tOVT9\tOVT10\tOVT11\tOVT12\r\n");
         uart_string("\r\n");
+        my_itoa(CurrentDevice, buf);
+        uart_string(buf);uart_xmit(',');uart_string("OverTemp,");
         ISLData = GetISLDevices(CurrentDevice);
         fault_data = (*ISLData).PAGE2_1.FAULT.OVTF.all;
         for(i = 11;i>-1;i--)
         {
             if(fault_data & (1<<i))
-                uart_string("1\t");
+                uart_string("1,");
             else
-                uart_string("0\t");
+                uart_string("0,");
         }
-
+        uart_string("\r\n");
     }
 }
 //we are referring a formula  Rt = R1 / ((Vo/Vin)-1) and we calculate Rt
