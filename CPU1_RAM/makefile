@@ -34,7 +34,7 @@ ORDERED_OBJS += \
 "./sources/spi.obj" \
 "./sources/uart.obj" \
 $(GEN_CMDS__FLAG) \
--l2837xD_RAM_lnk_cpu1.cmd \
+-l2837x_RAM_lnk_cpu1.cmd \
 -lF2837xD_Headers_nonBIOS_cpu1.cmd \
 -llibc.a \
 
@@ -164,7 +164,7 @@ all: can_external_transmit_cpu01.out
 can_external_transmit_cpu01.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: C2000 Linker'
-	"C:/ti/ccsv8/tools/compiler/ti-cgt-c2000_18.1.5.LTS/bin/cl2000" -v28 -ml -mt --cla_support=cla1 --float_support=fpu32 --tmu_support=tmu0 --vcu_support=vcu2 --fp_mode=relaxed --advice:performance=all --define=CPU1 -z --stack_size=0x200 --warn_sections -i"C:/ti/ccsv8/tools/compiler/ti-cgt-c2000_18.1.5.LTS/lib" -i"C:/ti/ccsv8/tools/compiler/ti-cgt-c2000_18.1.5.LTS/include" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/common/cmd" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/headers/cmd" --reread_libs --rom_model -o "can_external_transmit_cpu01.out" $(ORDERED_OBJS)
+	"C:/ti/ccsv8/tools/compiler/ti-cgt-c2000_18.1.5.LTS/bin/cl2000" -v28 -ml -mt --cla_support=cla1 --float_support=fpu32 --tmu_support=tmu0 --vcu_support=vcu2 --fp_mode=relaxed --advice:performance=all --define=CPU1 -z --stack_size=0x200 --warn_sections -i"C:/ti/ccsv8/tools/compiler/ti-cgt-c2000_18.1.5.LTS/lib" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/headers/cmd" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/examples/cpu1/can_external_transmit/Branch_for__Code_Changes/BMS_Launchpad" -i"C:/ti/ccsv8/tools/compiler/ti-cgt-c2000_18.1.5.LTS/include" --reread_libs --rom_model -o "can_external_transmit_cpu01.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 

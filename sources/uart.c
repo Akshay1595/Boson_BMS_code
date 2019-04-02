@@ -72,8 +72,7 @@ void uart_xmit(int a)
 //
 void uart_string(Uint8 * msg)
 {
-    int i;
-    i = 0;
+    Uint8 i=0;
     while(msg[i] != '\0')
     {
         uart_xmit(msg[i]);

@@ -15,6 +15,7 @@
 #include "adc.h"
 #include <math.h>
 #include "uart.h"
+#include "device_implementation.h"
 //#include "my_can.h"
 
 
@@ -122,32 +123,28 @@ void InitializeISLParameters(Uint8 NumDevices){
 	Uint8 i=1;
 	BalanceEnable[1]=0x1;
 	BalanceEnable[0]=0x2;
-	UnderVoltageLimit[1]=(Uint16)(((1<<13)/5)*1.05); 											//Set Lower Limit to 1.05
-	UnderVoltageLimit[0]=(Uint16)(((1<<13)/5)*1.05)>>8;										//Set Lower Limit to 1.05
-	OverVoltageLimit[1]=(Uint16)(((1<<13)/5)*1.67);											//Set Upper Limit to 1.67
-	OverVoltageLimit[0]=(Uint16)(((1<<13)/5)*1.67)>>8;										//Set Upper Limit to 1.67
 	DeviceSetup[0]=0x00;
 	DeviceSetup[1]=0x80;																		//Dont  Measure while balancing
-	CellSetup[1]=0x00;																			//Disable Cells 5,6,7 from faulting
-	CellSetup[0]=0x00;
-	OverTempLimit[1]=0x00;
-	OverTempLimit[0]=0x38>>2;																	//Set overtemp to 55 Degrees C
+	Uint8 disable_cell_array[12] = {0,0,0,0, 0,0,0,0, 0,0,0,0};                                  // we dont want to disable any cell hence we are keeping
+	                                                                                            // all zeros if cell1 we want to disable arr[0] = 1
+	OverTempLimit[1]=0x9D;
+	OverTempLimit[0]=0x0C;																	//Set overtemp to 55 Degrees C
 	Reset[1]=0;
 	Reset[0]=0;
 
     for(i=1;i<=NumDevices;i++){
 
     	ISL_WriteRegister(i,2,0x13, BalanceEnable); 											// This Initializes to Manual Mode and the Enable bit Set
-													// Set to Scan Continuously
-    	ISL_WriteRegister(i,2,0x11,UnderVoltageLimit); 											// Set UnderVoltage Limit
-    	ISL_WriteRegister(i,2,0x10,OverVoltageLimit);											// Set OverVoltage Limit
+
+    	write_undervoltage_threshold(i,1.05);                                                   //sets undervoltage threshold
+    	write_overvoltage_threshold(i, 2.05);                                                   //sets overvoltage threshold
     	ISL_WriteRegister(i,2,0x19,DeviceSetup);												// Disable Measure while balancing this doesn't work in manual mode
-    	ISL_WriteRegister(i,2,0x05,CellSetup);													// Disable Cell 5,6,7 from faulting
+    	disable_cell_from_faulting(i, disable_cell_array);
     	ISL_WriteRegister(i,2,0x12,OverTempLimit);												// Set OverTemp to 55 Degrees C
     	ISL_WriteRegister(i,2,0x00,Reset);
     	ISL_WriteRegister(i,2,0x01,Reset);
     	ISL_WriteRegister(i,2,0x02,Reset);
-    	ISL_Request(i, SCAN_CONTINOUS);
+    	ISL_Request(i, SCAN_CONTINOUS);                                                         // Set to Scan Continuously
     	DELAY_S(1);
 
     }

@@ -4,5 +4,5 @@
 
 USER_OBJS :=
 
-LIBS := -l2837xD_RAM_lnk_cpu1.cmd -lF2837xD_Headers_nonBIOS_cpu1.cmd -llibc.a
+LIBS := -l2837x_RAM_lnk_cpu1.cmd -lF2837xD_Headers_nonBIOS_cpu1.cmd -llibc.a
 
