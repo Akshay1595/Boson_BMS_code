@@ -87,30 +87,12 @@
 #include "SPI.h"
 #include "device_implementation.h"
 #include "uart.h"
-//
-// Defines
-//
-#define TXCOUNT  100
-#define MSG_DATA_LENGTH    8
-#define TX_MSG_OBJ_ID    1
-#define RX_MSG_OBJ_ID    1
 
 //
 // Globals
 //
-volatile unsigned long i;
-volatile uint32_t txMsgCount = 0;
-volatile uint32_t rxMsgCount = 0;
-volatile uint32_t errorFlag = 0;
-unsigned char txMsgData[8];
-unsigned char rxMsgData[8];
-tCANMsgObject sTXCANMessage;
-tCANMsgObject sRXCANMessage;
 Uint8 NumISLDevices=0x00;
-//
-// Function Prototypes
-//
-__interrupt void canbISR(void);
+
 
 //
 // Main
@@ -122,12 +104,15 @@ void main(void)
 
     Setup();
 
-    uart_string_newline("Setup Complete!\n");
+    uart_string_newline("Setup Complete!");
     TMR_Init();
-    uart_string_newline("Timer Setup Complete!\n");
+    uart_string_newline("Timer Setup Complete!");
     SPI_Init();
-    uart_string_newline("SPI Setup Complete!\n");
+    uart_string_newline("SPI Setup Complete!");
+    can_init();
+    uart_string_newline("CAN Setup Complete!");
     //SPI_Test();
+
     ResetISR();
 
     Bool Did_it_blend;
@@ -135,150 +120,34 @@ void main(void)
     Did_it_blend = ISL_Init_Retry(2);
 
     if (Did_it_blend == True)
-        uart_string_newline("Yes it has connected Successfully\n");
+        uart_string_newline("Yes it has connected Successfully!");
     else
     {
-        uart_string_newline("I couldn't find ISL devices!\n");
+        uart_string_newline("I couldn't find ISL devices!");
         while(1);
     }
 
+    NumISLDevices=NumDevices();
     ISL_EnableReceiveCallback();                                            // Enable the recieve call back
     ISL_SetReceiveCallback(RecieveHandler);                                 // Set the recievehandler to call when data is recieved from the daisy chain
-    NumISLDevices=NumDevices();
 
-    if(NumISLDevices == 4)
-    uart_string_newline("Totally there are 4 ISL devices!\n");
+    Uint8 _buf[8] = {};
+
+    uart_string("There are ");
+    my_itoa(NumISLDevices, _buf);
+    uart_string(_buf);
+    uart_string(" devices!\r\n");
 
     InitializeISLParameters(NumISLDevices);                                 // Initialize the default values into the ISL Registers
 
+    DELAY_S(1);
+
     while(1) {
              GetISLData(NumISLDevices);
-
+             DELAY_S(1);
+             log_data();
     }
-
-    can_init_GPIO();
-    can_init();
-
-    //
-    sTXCANMessage.ui32MsgID = 0x14;
-    sTXCANMessage.ui32MsgIDMask = 0;
-    sTXCANMessage.ui32Flags = 0;
-    sTXCANMessage.ui32MsgLen = 1;
-    sTXCANMessage.pucMsgData = txMsgData;
-
-    txMsgData[0] = 0x1;
-    txMsgData[1] = 0x1;
-    txMsgData[2] = 0x1;
-    txMsgData[3] = 0x1;
-    txMsgData[4] = 0x1;
-    txMsgData[5] = 0x1;
-    txMsgData[6] = 0x1;
-    txMsgData[7] = 0x1;
-
-    can_send();
-
-    while(1)
-    {
-
-        can_load_mailbox(&sTXCANMessage);
-        DELAY_US(10000);
-    }
-
-
-    //
-    // Stop application
-    //
     asm("   ESTOP0");
-}
-
-//
-// CAN B ISR - The interrupt service routine called when a CAN interrupt is
-//             triggered on CAN module B.
-//
-__interrupt void
-canbISR(void)
-{
-    uint32_t status;
-
-    //
-    // Read the CAN-B interrupt status to find the cause of the interrupt
-    //
-    status = CANIntStatus(CANB_BASE, CAN_INT_STS_CAUSE);
-
-    //
-    // If the cause is a controller status interrupt, then get the status
-    //
-    if(status == CAN_INT_INT0ID_STATUS)
-    {
-        //
-        // Read the controller status.  This will return a field of status
-        // error bits that can indicate various errors.  Error processing
-        // is not done in this example for simplicity.  Refer to the
-        // API documentation for details about the error status bits.
-        // The act of reading this status will clear the interrupt.
-        //
-        status = CANStatusGet(CANB_BASE, CAN_STS_CONTROL);
-
-        //
-        // Check to see if an error occurred.
-        //
-        if(((status  & ~(CAN_ES_RXOK)) != 7) &&
-           ((status  & ~(CAN_ES_RXOK)) != 0))
-        {
-            //
-            // Set a flag to indicate some errors may have occurred.
-            //
-            errorFlag = 1;
-        }
-    }
-    //
-    // Check if the cause is the CAN-B receive message object 1
-    //
-    else if(status == RX_MSG_OBJ_ID)
-    {
-        //
-        // Get the received message
-        //
-        CANMessageGet(CANB_BASE, RX_MSG_OBJ_ID, &sRXCANMessage, true);
-
-        //
-        // Getting to this point means that the RX interrupt occurred on
-        // message object 1, and the message RX is complete.  Clear the
-        // message object interrupt.
-        //
-        CANIntClear(CANB_BASE, RX_MSG_OBJ_ID);
-
-        //
-        // Increment a counter to keep track of how many messages have been
-        // received. In a real application this could be used to set flags to
-        // indicate when a message is received.
-        //
-        rxMsgCount++;
-
-        //
-        // Since the message was received, clear any error flags.
-        //
-        errorFlag = 0;
-    }
-    //
-    // If something unexpected caused the interrupt, this would handle it.
-    //
-    else
-    {
-        //
-        // Spurious interrupt handling can go here.
-        //
-    }
-
-    //
-    // Clear the global interrupt flag for the CAN interrupt line
-    //
-    CANGlobalIntClear(CANB_BASE, CAN_GLB_INT_CANINT0);
-
-    //
-    // Acknowledge this interrupt located in group 9
-    //
-    PieCtrlRegs.PIEACK.all = PIEACK_GROUP9;
 }
 
 //

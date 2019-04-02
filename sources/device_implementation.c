@@ -10,8 +10,76 @@
 #include "F28x_project.h"
 #include "device_implementation.h"
 #include "ISL94212.h"
+#include "General.h"
+#include "uart.h"
+#include <math.h>
 
 extern Uint8 NumISLDevices;
+
+double ConvertTemperature(Uint16 Raw){
+    double Vin_by_Vo = (double) 0x3FFF/(double)Raw;                                                               // Tempreg pulse is of 2.5V
+    double r1 = 40.2 * 1000;
+    double Rt = r1 / (Vin_by_Vo - 1);
+    double logRt = log(Rt);
+    double c1 = 1.009249522e-03, c2 = 2.378405444e-04, c3 = 2.019202697e-07;
+    double Tc,T = (1.0 / (c1 + c2*logRt + c3*logRt*logRt*logRt));
+    Tc = T - 273.15;
+    return Tc;                                                                      // Use the Lookup table
+}
+
+double read_temp(Uint8 device,Uint8 temp_sensor_no)
+{
+    if ((device > NumISLDevices) || (temp_sensor_no > 4))               // there are only 4 temp sensors available
+    {
+        //error condition return doing nothing
+        return 0;
+    }
+    double f_temp;
+    Uint16 temp_V;
+    ISL_DEVICE* ISLData;
+    int16 change_from_normal_value;
+    ISLData = GetISLDevices(device);
+    switch(temp_sensor_no)
+    {
+        case 0:
+            temp_V = (*ISLData).PAGE1.TEMP.ICT;
+            change_from_normal_value =  temp_V  - 9180;                   //9180 is value at 25 degree celcius
+            if(change_from_normal_value <0)
+                f_temp = 25.00 - ( abs(change_from_normal_value)/(141.23)); // dividing it by 141.23 since 9180/65  65? range is from -40 to 85 DegreeC
+            else
+                f_temp = 25.00 + (abs(change_from_normal_value)/(141.23));
+            return f_temp;
+
+        case 1:
+            temp_V = (*ISLData).PAGE1.TEMP.ET1V;
+            f_temp = ConvertTemperature(temp_V);
+            return f_temp;
+
+        case 2:
+            temp_V = (*ISLData).PAGE1.TEMP.ET2V;
+            f_temp = ConvertTemperature(temp_V);
+            return f_temp;
+
+        case 3:
+            temp_V = (*ISLData).PAGE1.TEMP.ET3V;
+            f_temp = ConvertTemperature(temp_V);
+            return f_temp;
+
+        case 4:
+            temp_V = (*ISLData).PAGE1.TEMP.ET4V;
+            f_temp = ConvertTemperature(temp_V);
+            return f_temp;
+
+    }
+
+        /*
+    uart_string_newline("Temp Value I am seeing is: ");
+    Uint8 buffer[20];
+    float_to_ascii(temp_value, buffer);
+    uart_string_newline(buffer);
+    */
+    return f_temp;
+}
 
 Uint16 read_voltage(Uint8 device,Uint8 cell_no)
 {
@@ -150,6 +218,10 @@ Uint16 get_current_soc(void)
 }
 void write_undervoltage_threshold(Uint8 device,float uv_voltage)
 {
+    Uint8 buf[10] = {};
+    float_to_ascii(uv_voltage, buf);
+    uart_string_newline("UVlimit =");
+    uart_string(buf);
     Uint8 UnderVoltageLimit[2];
     UnderVoltageLimit[1]=(Uint16)(((1<<13)/5)*uv_voltage);                                            //Set Lower Limit to 1.05
     UnderVoltageLimit[0]=(Uint16)(((1<<13)/5)*uv_voltage)>>8;                                     //Set Lower Limit to 1.05
@@ -159,10 +231,36 @@ void write_undervoltage_threshold(Uint8 device,float uv_voltage)
 void write_overvoltage_threshold(Uint8 device,float ov_voltage)
 {
     Uint8 OverVoltageLimit[2];
-
+    Uint8 buf[10] = {};
+    float_to_ascii(ov_voltage, buf);
+    uart_string_newline("OVlimit =");
+    uart_string(buf);
     OverVoltageLimit[1]=(Uint16)(((1<<13)/5)*ov_voltage);                                         //Set Upper Limit to 1.67
     OverVoltageLimit[0]=(Uint16)(((1<<13)/5)*ov_voltage)>>8;                                      //Set Upper Limit to 1.67
     ISL_WriteRegister(device,2,0x10,OverVoltageLimit);                                           // Set OverVoltage Limit
+}
+
+// this function disable cells from faulting and measurements
+// this function is called when you don't have 12 cells but you have some other number of cells
+// Uint8 array is an array of 12 integers where you will pass the cells to be disabled from faulting
+// ex. array[12]= {0,0,0,0,0,1,1,1,0,0,0,0}
+// array above will disable cells 5,6,7
+
+void disable_cell_from_faulting(Uint8 device,Uint8* array)
+{
+    Uint8 CellSetup[2]={};
+    Uint8 i=0;
+    for(i=0;i<8;i++)
+    {
+        if(array[i])
+            CellSetup[0] |= (1<<i);
+    }
+    for(i=8;i<12;i++)
+    {
+        if(array[i])
+            CellSetup[1] |= (1<<(i-8));
+    }
+    ISL_WriteRegister(device,2,0x05,CellSetup);
 }
 
 float get_float_value_for_voltage(Uint16 voltage,CELL_OR_PACK cell_or_pack)
@@ -187,4 +285,113 @@ float get_float_value_for_voltage(Uint16 voltage,CELL_OR_PACK cell_or_pack)
 
     }
     return float_v;
+}
+
+void log_data()
+{
+    Uint8 NumOfISLDevices = NumDevices();
+    Uint8 CurrentDevice;
+    ISL_DEVICE* ISLData;
+    uart_string_newline("----------------------------------------------Cell Data now----------------------------------------------");
+    for(CurrentDevice=0 ; CurrentDevice < NumOfISLDevices; CurrentDevice++)
+    {
+        uart_string_newline("Device ");
+        Uint8 buf[20]={};
+        my_itoa(CurrentDevice, buf);
+        uart_string(buf);
+
+        uart_string_newline("Cell Voltages");
+        uart_string_newline("Vb\tVc1\tVc2\tVc3\tVc4\tVc5\tVc6\tVc7\tVc8\tVc9\tVc10\tVc11\tVc12\r\n");
+
+        Uint16 voltage;
+        float f_voltage;
+        Uint8 cell_no = 0;
+        for(cell_no = 0; cell_no <13; cell_no++)
+        {
+            voltage = read_voltage(CurrentDevice, cell_no);
+            if (cell_no == 0)
+                f_voltage = get_float_value_for_voltage(voltage, pack);
+            else
+                f_voltage = get_float_value_for_voltage(voltage, cell);
+
+            float_to_ascii(f_voltage, buf);
+            uart_string(buf);
+            uart_xmit('\t');
+        }
+
+        uart_string_newline("Cell Temperatures");
+        uart_string_newline("Temp_IC\t\tTemp_T1\t\tTemp_t2\t\tTemp_t3\t\tTemp_t4\r\n");
+
+
+        Uint8 temp_sensor_no = 0;
+        double temp_degreeC;
+        for(temp_sensor_no = 0; temp_sensor_no <5; temp_sensor_no++)
+        {
+            temp_degreeC = read_temp(CurrentDevice,temp_sensor_no);
+            float_to_ascii(temp_degreeC, buf);
+            uart_string(buf);
+            uart_string("\t\t");
+        }
+
+        uart_string_newline("UnderVoltage");
+        uart_string_newline("UV1\tUV2\tUV3\tUV4\tUV5\tUV6\tUV7\tUV8\tUV9\tUV10\tUV11\tUV12\r\n");
+        uart_string("\r\n");
+        ISLData = GetISLDevices(CurrentDevice);
+        Uint16 fault_data = (*ISLData).PAGE2_1.FAULT.UF.all;
+        char i;
+        for(i = 0;i<12;i++)
+        {
+            if(fault_data & (1<<i))
+                uart_string("1\t");
+            else
+                uart_string("0\t");
+        }
+
+        uart_string_newline("OverVoltage");
+        uart_string_newline("OV1\tOV2\tOV3\tOV4\tOV5\tOV6\tOV7\tOV8\tOV9\tOV10\tOV11\tOV12\r\n");
+        uart_string("\r\n");
+        ISLData = GetISLDevices(CurrentDevice);
+        fault_data = (*ISLData).PAGE2_1.FAULT.OF.all;
+        for(i = 11;i>-1;i--)
+        {
+            if(fault_data & (1<<i))
+                uart_string("1\t");
+            else
+                uart_string("0\t");
+        }
+
+        uart_string_newline("OpenWire Fault");
+        uart_string_newline("OW1\tOW2\tOW3\tOW4\tOW5\tOW6\tOW7\tOW8\tOW9\tOW10\tOW11\tOW12\r\n");
+        uart_string("\r\n");
+        ISLData = GetISLDevices(CurrentDevice);
+        fault_data = (*ISLData).PAGE2_1.FAULT.OC.all;
+        for(i = 11;i>-1;i--)
+        {
+            if(fault_data & (1<<i))
+                uart_string("1\t");
+            else
+                uart_string("0\t");
+        }
+
+        uart_string_newline("Over temperature");
+        uart_string_newline("OVT1\tOVT2\tOVT3\tOVT4\tOVT5\tOVT6\tOVT7\tOVT8\tOVT9\tOVT10\tOVT11\tOVT12\r\n");
+        uart_string("\r\n");
+        ISLData = GetISLDevices(CurrentDevice);
+        fault_data = (*ISLData).PAGE2_1.FAULT.OVTF.all;
+        for(i = 11;i>-1;i--)
+        {
+            if(fault_data & (1<<i))
+                uart_string("1\t");
+            else
+                uart_string("0\t");
+        }
+
+    }
+}
+//we are referring a formula  Rt = R1 / ((Vo/Vin)-1) and we calculate Rt
+//https://www.ametherm.com/thermistor/ntc-thermistors-steinhart-and-hart-equation
+void set_over_temperature_limit(Uint8 device,double degreeC)
+{
+
+
 }
