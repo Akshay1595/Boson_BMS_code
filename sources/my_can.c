@@ -10,15 +10,7 @@
  *
  */
 
-#include "F28x_Project.h"     // Device Headerfile and Examples Include File
-#include <stdint.h>
-#include <stdbool.h>
-#include "inc/hw_types.h"
-#include "inc/hw_memmap.h"
-#include "inc/hw_can.h"
-#include "driverlib/can.h"
-#include "my_can.h"
-#include "ISL94212.h"
+#include "all_header.h"
 
 
 // Globals

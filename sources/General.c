@@ -9,16 +9,11 @@
  *
  */
 
-#include "F28x_Project.h"     // Device Headerfile and Examples Include File
-#include "General.h"
-#include "ISL94212.h"
-#include "adc.h"
-#include <math.h>
-#include "uart.h"
-#include "device_implementation.h"
-//#include "my_can.h"
-
-
+#include "all_header.h"
+//
+// Globals
+//
+Uint8 NumISLDevices=0x00;
 Uint8 GNR_ISRDepth=0;
 Uint8 BalanceEnable[2];
 Uint8 UnderVoltageLimit[2];
@@ -135,7 +130,6 @@ void InitializeISLParameters(Uint8 NumDevices){
     for(i=1;i<=NumDevices;i++){
 
     	ISL_WriteRegister(i,2,0x13, BalanceEnable); 											// This Initializes to Manual Mode and the Enable bit Set
-
     	write_undervoltage_threshold(i,1.05);                                                   //sets undervoltage threshold
     	write_overvoltage_threshold(i, 2.05);                                                   //sets overvoltage threshold
     	ISL_WriteRegister(i,2,0x19,DeviceSetup);												// Disable Measure while balancing this doesn't work in manual mode
@@ -339,6 +333,8 @@ void BalanceCells(Uint16 CurrentDevice){
 void Setup() {
 	Parameters* InitialParameters;
 
+    DisableISR();
+
     // Initialize System Control:
     // PLL, WatchDog, enable Peripheral Clocks
     InitSysCtrl();
@@ -404,10 +400,73 @@ void Setup() {
 
 	EDIS;
 
+#ifdef DEBUG
+    uart_string("Contactor initially off.....!");
+#endif
+    contactor_off();
+
 	//------------------------------Initialize ADC------------------------//
 	setup_adc();
+#ifdef DEBUG
+    uart_string_newline("ADC Complete!");
+#endif
 	//------------------------------UART init-----------------------------//
 	uart_init();
+#ifdef DEBUG
+    uart_string_newline("Setup Complete!");
+#endif
+    TMR_Init();
+#ifdef DEBUG
+    uart_string_newline("Timer Setup Complete!");
+#endif
+    SPI_Init();
+#ifdef DEBUG
+    uart_string_newline("SPI Setup Complete!");
+#endif
+    can_init();
+#ifdef DEBUG
+    uart_string_newline("CAN Setup Complete!");
+#endif
+    //SPI_Test();
+    Bool Did_it_blend;
+
+    Did_it_blend = ISL_Init_Retry(2);
+
+    if (Did_it_blend == True)
+    {
+#ifdef DEBUG
+        uart_string_newline("Yes it has connected Successfully!");
+#endif
+    }
+    else
+    {
+#ifdef DEBUG
+        uart_string_newline("I couldn't find ISL devices!");
+#endif
+        while(1);
+    }
+
+    ResetISR();
+
+    NumISLDevices=NumDevices();
+    ISL_EnableReceiveCallback();                                            // Enable the recieve call back
+    ISL_SetReceiveCallback(RecieveHandler);                                 // Set the recievehandler to call when data is recieved from the daisy chain
+
+    Uint8 _buf[8] = {};
+#ifdef DEBUG
+    uart_string("There are ");
+#endif
+    my_itoa(NumISLDevices, _buf);
+    uart_string(_buf);
+#ifdef DEBUG
+    uart_string(" devices!\r\n");
+#endif
+    contactor_on();
+#ifdef DEBUG
+    uart_string("Contactor turned ON.....!");
+#endif
+    InitializeISLParameters(NumISLDevices);                                 // Initialize the default values into the ISL Registers
+
 }
 
 

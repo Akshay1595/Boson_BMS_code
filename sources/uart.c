@@ -4,9 +4,7 @@
  *  Created on: Mar 23, 2019
  *      Author: Akshay Godase
  */
-#include "F28x_project.h"
-#include "uart.h"
-#include <string.h>
+#include "all_header.h"
 /*
  * This function inits GPIO9 and GPIO8 as UART RX and TX pin resp.
  */

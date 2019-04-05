@@ -72,74 +72,14 @@
 //
 // Included Files
 //
-#include "F28x_Project.h"     // Device Headerfile and Examples Include File
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include "inc/hw_types.h"
-#include "inc/hw_memmap.h"
-#include "inc/hw_can.h"
-#include "driverlib/can.h"
-#include "my_can.h"
-#include "General.h"
-#include "ISL94212.h"
-#include "Timer.h"
-#include "SPI.h"
-#include "device_implementation.h"
-#include "uart.h"
-
-//
-// Globals
-//
-Uint8 NumISLDevices=0x00;
-
-
+#include "all_header.h"
 //
 // Main
 //
 void main(void)
 {
-
-    DisableISR();
-
     Setup();
-
-    uart_string_newline("Setup Complete!");
-    TMR_Init();
-    uart_string_newline("Timer Setup Complete!");
-    SPI_Init();
-    uart_string_newline("SPI Setup Complete!");
-    can_init();
-    uart_string_newline("CAN Setup Complete!");
-    //SPI_Test();
-
-    ResetISR();
-
-    Bool Did_it_blend;
-
-    Did_it_blend = ISL_Init_Retry(2);
-
-    if (Did_it_blend == True)
-        uart_string_newline("Yes it has connected Successfully!");
-    else
-    {
-        uart_string_newline("I couldn't find ISL devices!");
-        while(1);
-    }
-
-    NumISLDevices=NumDevices();
-    ISL_EnableReceiveCallback();                                            // Enable the recieve call back
-    ISL_SetReceiveCallback(RecieveHandler);                                 // Set the recievehandler to call when data is recieved from the daisy chain
-
-    Uint8 _buf[8] = {};
-
-    uart_string("There are ");
-    my_itoa(NumISLDevices, _buf);
-    uart_string(_buf);
-    uart_string(" devices!\r\n");
-
-    InitializeISLParameters(NumISLDevices);                                 // Initialize the default values into the ISL Registers
-
+    contactor_on();
     DELAY_S(1);
 
     while(1) {
@@ -147,7 +87,6 @@ void main(void)
              DELAY_S(1);
              log_data();
     }
-    asm("   ESTOP0");
 }
 
 //

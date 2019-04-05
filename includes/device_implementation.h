@@ -51,6 +51,7 @@ void balance_all(Uint8 device,Uint16 all_data);
 void contactor_on(void);
 void contactor_off(void);
 Uint16 get_current_soc(void);
+double get_battery_voltage(void);
 void log_data(void);
 void set_over_temperature_limit(Uint8 device,double degreeC);
 void write_undervoltage_threshold(Uint8 device,float uv_voltage);

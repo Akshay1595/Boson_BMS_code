@@ -9,10 +9,7 @@
  * Copyright 2014	
  */
 
-#include "F28x_Project.h"     // Device Headerfile and Examples Include File
-#include "General.h"
-#include "Timer.h"
-//#include "CAN.h"
+#include "all_header.h"
 
 TMR_CALLBACKS TimerCallbacks;
 

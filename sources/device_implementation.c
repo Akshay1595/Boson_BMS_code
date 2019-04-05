@@ -7,12 +7,7 @@
  *      device_implementation.h
  */
 
-#include "F28x_project.h"
-#include "device_implementation.h"
-#include "ISL94212.h"
-#include "General.h"
-#include "uart.h"
-#include <math.h>
+#include "all_header.h"
 
 extern Uint8 NumISLDevices;
 
@@ -137,9 +132,25 @@ Uint16 read_voltage(Uint8 device,Uint8 cell_no)
             return 0;
     }
 }
+// read the current from ADC
 Uint16 read_current(void)
 {
     return NowCurrent;
+}
+
+// battery voltage is some of all the pack voltage since they are in series
+double get_battery_voltage(void)
+{
+    Uint16 batt_v = 0,i;
+    double f_voltage = 0.0;
+    ISL_DEVICE* ISL_Struct;
+    for(i=0;i<NumISLDevices;i++)
+    {
+        ISL_Struct = GetISLDevices(i);
+        batt_v =   ISL_Struct->PAGE1.CELLV.VB;
+        f_voltage += get_float_value_for_voltage(batt_v, pack);
+    }
+    return f_voltage;
 }
 void balance_on(Uint8 device,Uint8 cell_no)
 {
@@ -204,12 +215,13 @@ void balance_all(Uint8 device,Uint16 all_data)
 void contactor_on(void)
 {
     //GPIO31 is connected to contactor
-    GpioDataRegs.GPASET.bit.GPIO31 = 1;
+    GpioDataRegs.GPACLEAR.bit.GPIO31 = 1;
 }
 void contactor_off(void)
 {
     //GPIO31 is connected to contactor
-    GpioDataRegs.GPACLEAR.bit.GPIO31 = 1;
+    GpioDataRegs.GPASET.bit.GPIO31 = 1;
+
 }
 Uint16 get_current_soc(void)
 {
@@ -218,10 +230,6 @@ Uint16 get_current_soc(void)
 }
 void write_undervoltage_threshold(Uint8 device,float uv_voltage)
 {
-    Uint8 buf[10] = {};
-    float_to_ascii(uv_voltage, buf);
-    uart_string_newline("UVlimit =");
-    uart_string(buf);
     Uint8 UnderVoltageLimit[2];
     UnderVoltageLimit[1]=(Uint16)(((1<<13)/5)*uv_voltage);                                            //Set Lower Limit to 1.05
     UnderVoltageLimit[0]=(Uint16)(((1<<13)/5)*uv_voltage)>>8;                                     //Set Lower Limit to 1.05
@@ -289,11 +297,12 @@ float get_float_value_for_voltage(Uint16 voltage,CELL_OR_PACK cell_or_pack)
 
 void log_data()
 {
+#ifdef DEBUG
     Uint8 NumOfISLDevices = NumDevices();
     Uint8 CurrentDevice;
     ISL_DEVICE* ISLData;
     uart_string("\r\n");
-    uart_string("Device,");uart_string("Param,");uart_string("PackV,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11,C12\r\n");
+    uart_string("Device,");uart_string("Param,");uart_string("PackV,C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11,C12,BatteryVoltage\r\n");
 
     for(CurrentDevice=0 ; CurrentDevice < NumOfISLDevices; CurrentDevice++)
     {
@@ -315,6 +324,11 @@ void log_data()
             uart_string(buf);
             uart_xmit(',');
         }
+        f_voltage  = get_battery_voltage();
+        float_to_ascii(f_voltage, buf);
+        uart_string(buf);
+        uart_xmit(',');
+
         uart_string("\r\n");
         my_itoa(CurrentDevice, buf);
         uart_string(buf);uart_xmit(',');uart_string("Cell_Temp,");
@@ -384,6 +398,7 @@ void log_data()
         }
         uart_string("\r\n");
     }
+#endif
 }
 //we are referring a formula  Rt = R1 / ((Vo/Vin)-1) and we calculate Rt
 //https://www.ametherm.com/thermistor/ntc-thermistors-steinhart-and-hart-equation

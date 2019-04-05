@@ -11,9 +11,7 @@
  */
 
 
-#include "SPI.h"
-#include "F28x_Project.h"      // Device Headerfile and Examples Include File
-#include "Timer.h"
+#include "all_header.h"
 
 SPI_RECEIVE_BUFFER SPI_ReceiveBuffer;
 SPI_CALLBACKS SPICallbacks;

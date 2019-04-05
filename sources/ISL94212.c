@@ -9,11 +9,7 @@
  *
  */
 
-#include "F28x_Project.h"     // Device Headerfile and Examples Include File
-#include "Timer.h"
-#include "ISL94212.h"
-#include "CommandPriorityQueue.h"
-#include "SPI.h"
+#include "all_header.h"
 
 ISL_CALLBACKS ISLCallbacks;
 ISL_STATE ISLState;
