@@ -15,6 +15,10 @@
 
 #define MAX_CELL_NUMBER 12
 
+#define UV_LIMIT    1.00
+#define OV_LIMIT    3.5
+#define OT_LIMIT    degC_55
+
 typedef enum  {
     VB=0,
     C1V,
@@ -36,6 +40,16 @@ typedef enum{
     pack = 1
 }CELL_OR_PACK;
 
+typedef enum  {
+    degC_25=25,
+    degC_30=30,
+    degC_35=35,
+    degC_40=40,
+    degC_45=45,
+    degC_50=50,
+    degC_55=55,
+    degC_60=60,
+}TEMP_LOOKUP_INDEX;
 
 extern Uint16 NowCurrent;
 
@@ -53,7 +67,7 @@ void contactor_off(void);
 Uint16 get_current_soc(void);
 double get_battery_voltage(void);
 void log_data(void);
-void set_over_temperature_limit(Uint8 device,double degreeC);
+void set_over_temperature_limit(Uint8 device,Uint8 degreeC);
 void write_undervoltage_threshold(Uint8 device,float uv_voltage);
 void write_overvoltage_threshold(Uint8 device,float ov_voltage);
 void disable_cell_from_faulting(Uint8 device,Uint8*array);

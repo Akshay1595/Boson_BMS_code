@@ -109,8 +109,6 @@ Uint16 GetCellsInBalance(void);
 void BangTemperatureControl(void);
 Uint16 GetNowCurrent(void);
 Uint16 GetNowVoltage(void);
-void ToggleLED(Uint8 led);
-void BalanceCells(Uint16 CurrentDevice);
 void InitializeISLParameters(Uint8 NumDevices);
 void GetISLData(Uint8 NumDevices);
 void TemperatureControl(void);
@@ -121,13 +119,6 @@ void InitializeAllParameters(void);
 Parameters* GetParameters(void);
 Bool MakeABool(Uint8 ToBeMade);
 SummaryFaults* CheckFaults(Uint8 device);
-void Setup();
-void SetGPIO(Uint16 GPIOPin);
-void ClearGPIO(Uint16 GPIOPin);
-void LEDOn(LED Color);
-void LEDOff(LED Color);
-
-
-
+void Setup(void);
 
 #endif /* GENERAL_H_ */

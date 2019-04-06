@@ -9,6 +9,22 @@
 
 #include "all_header.h"
 
+//globals
+
+//find look up table here
+//https://docs.google.com/document/d/1JUxwLQbjrIoaSeL-24jZHb-qJ2MlkH5eazI8PYYRZg4/edit
+Uint8 temp_lookup_table[8][2]=
+{
+ {0x0C,0x9F},//25degreeC
+ {0x0A,0xC9},//30degreeC
+ {0x07,0xDD},//35degreeC
+ {0x07,0x90},//40degreeC
+ {0x06,0xB8},//45degreeC
+ {0x05,0xBE},//50degreeC
+ {0x04,0xEA},//55degreeC
+ {0x04,0x37},//60degreeC
+};
+
 extern Uint8 NumISLDevices;
 
 double ConvertTemperature(Uint16 Raw){
@@ -239,10 +255,6 @@ void write_undervoltage_threshold(Uint8 device,float uv_voltage)
 void write_overvoltage_threshold(Uint8 device,float ov_voltage)
 {
     Uint8 OverVoltageLimit[2];
-    Uint8 buf[10] = {};
-    float_to_ascii(ov_voltage, buf);
-    uart_string_newline("OVlimit =");
-    uart_string(buf);
     OverVoltageLimit[1]=(Uint16)(((1<<13)/5)*ov_voltage);                                         //Set Upper Limit to 1.67
     OverVoltageLimit[0]=(Uint16)(((1<<13)/5)*ov_voltage)>>8;                                      //Set Upper Limit to 1.67
     ISL_WriteRegister(device,2,0x10,OverVoltageLimit);                                           // Set OverVoltage Limit
@@ -389,8 +401,12 @@ void log_data()
         uart_string(buf);uart_xmit(',');uart_string("OverTemp,");
         ISLData = GetISLDevices(CurrentDevice);
         fault_data = (*ISLData).PAGE2_1.FAULT.OVTF.all;
-        for(i = 11;i>-1;i--)
+        for(i = 0;i<=4;i++)
         {
+            uart_string("Temp_");
+            my_itoa(i,buf);
+            uart_string(buf);
+            uart_xmit('=');
             if(fault_data & (1<<i))
                 uart_string("1,");
             else
@@ -401,9 +417,14 @@ void log_data()
 #endif
 }
 //we are referring a formula  Rt = R1 / ((Vo/Vin)-1) and we calculate Rt
-//https://www.ametherm.com/thermistor/ntc-thermistors-steinhart-and-hart-equation
-void set_over_temperature_limit(Uint8 device,double degreeC)
+//please find brief documentation at
+//  https://docs.google.com/document/d/1JUxwLQbjrIoaSeL-24jZHb-qJ2MlkH5eazI8PYYRZg4/edit
+void set_over_temperature_limit(Uint8 device,Uint8 degreeC)
 {
-
-
+    if(degreeC < 25 || degreeC >60)
+    {
+        //error since long wrong is passed
+        return;
+    }
+    ISL_WriteRegister(device,2,0x12,temp_lookup_table[(degreeC/5)-5]);                                              // Set OverTemp to 55 Degrees C
 }

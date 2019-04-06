@@ -81,61 +81,47 @@ void ResetISR() {
 	return;
 }
 
-void ToggleLED(Uint8 led) {
-
-	if(led == 0) { GpioDataRegs.GPATOGGLE.bit.GPIO31 = 1; }
-	if(led == 1) { GpioDataRegs.GPBTOGGLE.bit.GPIO34 = 1; }
-}
-#pragma CODE_SECTION(SetGPIO,".xtraCode")
-void SetGPIO(Uint16 GPIOPin){
-	if(GPIOPin>=32 && GPIOPin<=44){
-		GpioDataRegs.GPBSET.all=1<<(GPIOPin-32);
-	}
-	else if(GPIOPin>=0 && GPIOPin <= 31){
-		GpioDataRegs.GPASET.all=1<<GPIOPin;
-	}
-}
-
-void ClearGPIO(Uint16 GPIOPin){
-	if(GPIOPin>=32 && GPIOPin<=44){
-		GpioDataRegs.GPBCLEAR.all=1<<(GPIOPin-32);
-	}
-	else if(GPIOPin>=0 && GPIOPin <= 31){
-		GpioDataRegs.GPACLEAR.all=1<<GPIOPin;
-	}
-}
-
-void LEDOn(LED Color){
-	SetGPIO(Color);
-}
-
-void LEDOff(LED Color){
-	ClearGPIO(Color);
-}
-
 #pragma CODE_SECTION(InitializeISLParameters,".bigCode")
 void InitializeISLParameters(Uint8 NumDevices){
 	Uint8 i=1;
+	Uint8 buf[16] = {};
+	Uint8 Fault_setup[2] = {};
 	BalanceEnable[1]=0x1;
 	BalanceEnable[0]=0x2;
 	DeviceSetup[0]=0x00;
 	DeviceSetup[1]=0x80;																		//Dont  Measure while balancing
 	Uint8 disable_cell_array[12] = {0,0,0,0, 0,0,0,0, 0,0,0,0};                                  // we dont want to disable any cell hence we are keeping
 	                                                                                            // all zeros if cell1 we want to disable arr[0] = 1
+	Fault_setup[1]  = 0x60; //default tot0 and tot1 to 11 which takes 8 sample at scan interval of 16ms
+	Fault_setup[0]  = 0x1F; //enable external temperature devices to fault
+
 	OverTempLimit[1]=0x9D;
 	OverTempLimit[0]=0x0C;																	//Set overtemp to 55 Degrees C
 	Reset[1]=0;
 	Reset[0]=0;
 
-    for(i=1;i<=NumDevices;i++){
+#ifdef DEBUG
+	uart_string("UV Limit set to = ");
+	float_to_ascii(UV_LIMIT, buf);
+	uart_string(buf);
+	uart_string_newline("OV_limit set to = ");
+	float_to_ascii(OV_LIMIT, buf);
+    uart_string(buf);
+    uart_string_newline("OVTF limit set to = ");
+    my_itoa(OT_LIMIT, buf);
+    uart_string(buf);
+    uart_string("degreeC");
+#endif
 
+    for(i=1;i<=NumDevices;i++){
+        set_over_temperature_limit(i,degC_30);
+        ISL_WriteRegister(i,2,0x03, Fault_setup);                                               // allow external temperature measurement to set fault bits
     	ISL_WriteRegister(i,2,0x13, BalanceEnable); 											// This Initializes to Manual Mode and the Enable bit Set
-    	write_undervoltage_threshold(i,1.05);                                                   //sets undervoltage threshold
-    	write_overvoltage_threshold(i, 2.05);                                                   //sets overvoltage threshold
+    	write_undervoltage_threshold(i,UV_LIMIT);                                                   //sets under_voltage threshold
+    	write_overvoltage_threshold(i, OV_LIMIT);                                                   //sets over_voltage threshold
     	ISL_WriteRegister(i,2,0x19,DeviceSetup);												// Disable Measure while balancing this doesn't work in manual mode
-    	disable_cell_from_faulting(i, disable_cell_array);
-    	ISL_WriteRegister(i,2,0x12,OverTempLimit);												// Set OverTemp to 55 Degrees C
-    	ISL_WriteRegister(i,2,0x00,Reset);
+    	disable_cell_from_faulting(i, disable_cell_array);                                      //disable some cells from faulting
+    	ISL_WriteRegister(i,2,0x00,Reset);                                                      //reset all the pages one by one
     	ISL_WriteRegister(i,2,0x01,Reset);
     	ISL_WriteRegister(i,2,0x02,Reset);
     	ISL_Request(i, SCAN_CONTINOUS);                                                         // Set to Scan Continuously
@@ -268,70 +254,11 @@ SummaryFaults* CheckFaults(Uint8 device){
 	if((ISLData->PAGE2_1.FAULT.OVTF.all)>0){
 		AllFaults.OverTemp=True;
 	}
-}
-
-
-// The balance cells function trips the balance resistors based on whether or not they are currently on and what the current voltage is
-// when it trips it then checks to see if the voltage has fallen below the threshold minus the hysteresis 
-#pragma CODE_SECTION(BalanceCells,".xtraCode")
-void BalanceCells(Uint16 CurrentDevice){
-	ISL_DEVICE* ISLData;
-	Uint16 BalanceOut=0x0000;
-	Uint8 BalanceChip[2];
-	Uint16 stuff;
-	Uint8 i;
-	Uint16 BalanceThresholdOn=(((1<<13)/5)*1.64);																				//2^12/2.5*Number so 1.5 for now
-	Uint16 BalanceThresholdOff=BalanceThresholdOn-(((1<<13)/5)*.05);															//2^12/2.5*Number so 1.45 for now
-	Parameters* SystemParameters;
-	SystemParameters= GetParameters();
-	BalanceChip[0]=0x00;
-	BalanceChip[1]=0x00;
-	ISLData = GetISLDevices(CurrentDevice);
-	BalanceOut=(*ISLData).PAGE2_2.SETUP.BSTAT.all;
-	if((*SystemParameters).Balance.Enable==True){
-		for (i=0;i<12;){
-			if((*(((Uint16*)(&((*ISLData).PAGE2_2.SETUP.BSTAT.all))))&(1<<i))>0){
-				if(*(((Uint16*)(&((*ISLData).PAGE1.CELLV.C1V)))+i)<((*SystemParameters).Balance.TopBalanceVoltage-(*SystemParameters).Balance.BalanceHysteresis)){
-					BalanceOut &= ~(1<<i);
-				}
-				else{
-					//Do Something
-				}
-			}
-		else{
-				if(*(((Uint16*)(&((*ISLData).PAGE1.CELLV.C1V)))+i)>(*SystemParameters).Balance.TopBalanceVoltage){
-					BalanceOut |= (1<<i);
-				}
-				else{
-					//Do Something
-				}
-			}
-		i++;
-			if(i==4){
-				i=7;
-			}
-		}
-	BalanceOut &= 0x0F8F;
-	}
-	else{
-		BalanceOut=0;
-	}
-	if (BalanceOut==0){
-		LEDOff(BLUE);
-	}
-	else{
-		LEDOn(BLUE);
-	}
-	BalanceChip[0]=((BalanceOut>>8) & 0xFF);
-	BalanceChip[1]=((BalanceOut) & 0x00FF);		//Bit Shift them to the right locations Chip 1 is 0-9
-	//ISL_COMMAND deivce number is (2*Module)-1 for one and no minus 1 for the second
-	ISL_Command(CurrentDevice+1,2,0x14,1,BalanceChip,2, 0);
-
+	return &AllFaults;
 }
 
 #pragma CODE_SECTION(Setup,".bigCode")
 void Setup() {
-	Parameters* InitialParameters;
 
     DisableISR();
 

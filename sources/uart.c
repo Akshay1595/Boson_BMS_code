@@ -124,7 +124,7 @@ void uart_receive_buffer(Uint8 *buf)
 /*
  *  Description: myitoa implementation
  */
-void my_itoa(Uint16 a,char *buf)
+void my_itoa(Uint16 a,Uint8* buf)
 {
     int index = 0;
     if(a == 0)
@@ -140,7 +140,7 @@ void my_itoa(Uint16 a,char *buf)
     int len = strlen(buf);
     reverse(buf,len);
 }
-void reverse(char *str, int len)
+void reverse(Uint8 *str, int len)
 {
     int i=0, j=len-1, temp;
     while (i<j)
