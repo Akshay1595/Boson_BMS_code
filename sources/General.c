@@ -114,7 +114,7 @@ void InitializeISLParameters(Uint8 NumDevices){
 #endif
 
     for(i=1;i<=NumDevices;i++){
-        set_over_temperature_limit(i,degC_30);
+        set_over_temperature_limit(i,OT_LIMIT);
         ISL_WriteRegister(i,2,0x03, Fault_setup);                                               // allow external temperature measurement to set fault bits
     	ISL_WriteRegister(i,2,0x13, BalanceEnable); 											// This Initializes to Manual Mode and the Enable bit Set
     	write_undervoltage_threshold(i,UV_LIMIT);                                                   //sets under_voltage threshold
@@ -394,6 +394,12 @@ void Setup() {
 #endif
     InitializeISLParameters(NumISLDevices);                                 // Initialize the default values into the ISL Registers
 
+#ifdef DEBUG
+    #ifdef PARTIAL_LOG
+    uart_string(",,,,Device1,,,,,,,,,,Device2,,,,,,,,,,Device3,,,,,,,,,,Device4,,,,,,\r\n");
+    uart_string("Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW,,Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW,,Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW,,Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW\r\n");
+    #endif
+#endif
 }
 
 

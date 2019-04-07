@@ -310,6 +310,7 @@ float get_float_value_for_voltage(Uint16 voltage,CELL_OR_PACK cell_or_pack)
 void log_data()
 {
 #ifdef DEBUG
+#ifndef PARTIAL_LOG
     Uint8 NumOfISLDevices = NumDevices();
     Uint8 CurrentDevice;
     ISL_DEVICE* ISLData;
@@ -415,6 +416,7 @@ void log_data()
         uart_string("\r\n");
     }
 #endif
+#endif
 }
 //we are referring a formula  Rt = R1 / ((Vo/Vin)-1) and we calculate Rt
 //please find brief documentation at
@@ -427,4 +429,50 @@ void set_over_temperature_limit(Uint8 device,Uint8 degreeC)
         return;
     }
     ISL_WriteRegister(device,2,0x12,temp_lookup_table[(degreeC/5)-5]);                                              // Set OverTemp to 55 Degrees C
+}
+//this is partial log which eliminates unnecessary information
+//It is just giving info about min,max and faults
+void partial_log()
+{
+#ifdef PARTIAL_LOG
+    Uint16 V_array[12]={},Vcmin,Vcmax,i=0,Vpack;
+    Uint16 Temp_array[4] = {};
+    double F_value;
+    Uint8 cell_no=1;
+    Uint8 buf[16] = {};
+    for(i=0;i<NumISLDevices;i++)
+    {
+        //get Vcmax
+        for(;cell_no <= MAX_CELL_NUMBER ; cell_no++)
+        {
+            V_array[(cell_no-1)] = read_voltage(i, cell_no);
+        }
+        Vcmax=(Uint16)GetMax(V_array, 12);      //get the array index
+        Vcmin=(Uint16)GetMin(V_array, 12);
+        Vcmax = V_array[Vcmax];                 //get the value same variable for saving memory
+        Vcmin = V_array[Vcmin];
+        Vpack = read_voltage(i, 0);
+        F_value = get_float_value_for_voltage(Vcmin, cell);float_to_ascii(F_value, buf);uart_string(buf);uart_xmit(',');
+        F_value = get_float_value_for_voltage(Vcmax, cell);float_to_ascii(F_value, buf);uart_string(buf);uart_xmit(',');
+        F_value = get_float_value_for_voltage(Vpack, pack);float_to_ascii(F_value, buf);uart_string(buf);uart_xmit(',');
+
+        ISL_DEVICE* ISLData;
+        ISLData = GetISLDevices(i);
+        Temp_array[0] = ISLData->PAGE1.TEMP.ET1V;Temp_array[1] = ISLData->PAGE1.TEMP.ET2V;
+        Temp_array[2] = ISLData->PAGE1.TEMP.ET3V;Temp_array[3] = ISLData->PAGE1.TEMP.ET4V;
+        F_value = read_temp(i, (GetMax(Temp_array, 4)+1));float_to_ascii(F_value, buf);uart_string(buf);uart_xmit(',');
+        F_value = read_temp(i, (GetMin(Temp_array, 4)+1));float_to_ascii(F_value, buf);uart_string(buf);uart_xmit(',');
+
+        Uint16 somevalue;
+        somevalue = ISLData->PAGE2_1.FAULT.OVTF.all;somevalue = (somevalue>>1) & 0x000F;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
+        somevalue = ISLData->PAGE2_1.FAULT.UF.all;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
+        somevalue = ISLData->PAGE2_1.FAULT.OF.all;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
+        somevalue = ISLData->PAGE2_1.FAULT.OC.all;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
+
+        if(i == NumISLDevices-1)
+            uart_string("\r\n");
+        else
+            uart_xmit(',');
+    }
+#endif
 }

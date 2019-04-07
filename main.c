@@ -32,8 +32,12 @@ void main(void)
 
     while(1) {
              GetISLData(NumISLDevices);
-             DELAY_S(1);
+             DELAY_MS(100);
+#ifndef PARTIAL_LOG
              log_data();
+#else
+             partial_log();
+#endif
     }
 }
 

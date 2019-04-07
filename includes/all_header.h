@@ -32,5 +32,6 @@
 #include "CommandPriorityQueue.h"
 
 #define DEBUG
+#define PARTIAL_LOG
 
 #endif /* INCLUDES_ALL_HEADER_H_ */
