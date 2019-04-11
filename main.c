@@ -27,17 +27,22 @@
 void main(void)
 {
     Setup();
+    GetISLData(NumISLDevices);                      //read before turning On Contactor
+    DELAY_S(1);
+    fault_isr();
     contactor_on();
     DELAY_S(1);
 
     while(1) {
              GetISLData(NumISLDevices);
-             DELAY_MS(100);
+             DELAY_S(1);
 #ifndef PARTIAL_LOG
              log_data();
 #else
              partial_log();
 #endif
+             fault_isr();
+
     }
 }
 

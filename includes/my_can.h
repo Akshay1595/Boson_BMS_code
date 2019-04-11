@@ -19,9 +19,6 @@
 #include "driverlib/debug.h"
 #include "driverlib/interrupt.h"
 
-
-#define MAX_DEVICES 4
-
 typedef struct mailbox{
     tCANMsgObject CELLV_1_4;
     Uint8 cell_V_1_4[8];

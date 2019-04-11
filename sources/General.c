@@ -25,7 +25,6 @@ Uint8 DeviceSetup[2];
 Uint8 CellSetup[2];
 Uint8 OverTempLimit[2];
 Uint8 Reset[2];
-SummaryFaults AllFaults;
 ShelfArray OverTempAgg;
 Uint8 Zero[2];
 Uint8* NumCellsBalancing;
@@ -125,8 +124,8 @@ void InitializeISLParameters(Uint8 NumDevices){
     	ISL_WriteRegister(i,2,0x01,Reset);
     	ISL_WriteRegister(i,2,0x02,Reset);
     	ISL_Request(i, SCAN_CONTINOUS);                                                         // Set to Scan Continuously
+    	ISL_WriteRegister(i, 2, 0x04, Reset);                                     //clear fault status register
     	DELAY_S(1);
-
     }
 }
 
@@ -240,23 +239,6 @@ Uint16 GetCellsInBalance(void){
 	return CellsInBalance;
 }
 
-SummaryFaults* CheckFaults(Uint8 device){
-	ISL_DEVICE* ISLData = GetISLDevices(device);												//Get the Current Module
-	if((ISLData->PAGE2_1.FAULT.OC.all & ~(7<<5))>0){
-		AllFaults.OpenWire=True;
-	}
-	if((ISLData->PAGE2_1.FAULT.OF.all & ~(7<<5))>0){
-		AllFaults.OverVoltage=True;
-	}
-	if((ISLData->PAGE2_1.FAULT.UF.all & ~(7<<5))>0){
-		AllFaults.UnderVoltage=True;
-	}
-	if((ISLData->PAGE2_1.FAULT.OVTF.all)>0){
-		AllFaults.OverTemp=True;
-	}
-	return &AllFaults;
-}
-
 #pragma CODE_SECTION(Setup,".bigCode")
 void Setup() {
 
@@ -303,11 +285,6 @@ void Setup() {
 	GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 0;										// 0=GPIO,  1=CANTX-A,  2=Resv,  3=Resv
 	GpioCtrlRegs.GPADIR.bit.GPIO0 = 1;										// 1=OUTput,  0=INput
 	GpioDataRegs.GPASET.bit.GPIO0 = 1;										// Set High initially
-
-
-	//GPIO Fault Read Pin
-	GpioCtrlRegs.GPAMUX1.bit.GPIO2 = 0;										// 0=GPIO,  1=CANTX-A,  2=Resv,  3=Resv
-	GpioCtrlRegs.GPADIR.bit.GPIO2 = 0;										// 1=OUTput,  0=INput
 
 
 	//GPIO BLUE LED
@@ -388,10 +365,7 @@ void Setup() {
 #ifdef DEBUG
     uart_string(" devices!\r\n");
 #endif
-    contactor_on();
-#ifdef DEBUG
-    uart_string("Contactor turned ON.....!");
-#endif
+
     InitializeISLParameters(NumISLDevices);                                 // Initialize the default values into the ISL Registers
 
 #ifdef DEBUG

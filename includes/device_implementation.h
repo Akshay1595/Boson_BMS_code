@@ -13,8 +13,6 @@
 #include "F28x_project.h"
 #include "ISL94212.h"
 
-#define MAX_CELL_NUMBER 12
-
 
 typedef enum  {
     degC_25=25,
@@ -27,10 +25,6 @@ typedef enum  {
     degC_60=60,
 }TEMP_LOOKUP_INDEX;
 
-
-#define UV_LIMIT    1.00
-#define OV_LIMIT    3.5
-#define OT_LIMIT    degC_40
 
 typedef enum  {
     VB=0,

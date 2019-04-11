@@ -158,6 +158,27 @@ void float_to_ascii(double number,Uint8 *buf)
     strcat(buf,".");
     Uint16 float_num = ((Uint32)((double)number * 1000)) - (Uint32)(i_num*1000);
     char buf2[10] = {};
-    my_itoa(float_num,buf2);
-    strcat(buf,buf2);
+    if (float_num < 100)
+    {
+        if(float_num < 10)
+        {
+            strcpy(buf2,"00");
+            my_itoa(float_num,buf2+2);
+        }
+        else if(float_num == 0)
+        {
+            strcpy(buf2,"000");
+        }
+        else
+        {
+            strcpy(buf2,"0");
+            my_itoa(float_num,buf2+1);
+        }
+        strcat(buf,buf2);
+    }
+    else
+    {
+        my_itoa(float_num,buf2);
+        strcat(buf,buf2);
+    }
 }

@@ -30,6 +30,7 @@ ORDERED_OBJS += \
 "./sources/Timer.obj" \
 "./sources/adc.obj" \
 "./sources/device_implementation.obj" \
+"./sources/fault_handling.obj" \
 "./sources/my_can.obj" \
 "./sources/spi.obj" \
 "./sources/uart.obj" \
@@ -178,8 +179,8 @@ can_external_transmit_cpu01.hex: $(EXE_OUTPUTS)
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "F2837xD_Adc.obj" "F2837xD_CodeStartBranch.obj" "F2837xD_DefaultISR.obj" "F2837xD_GlobalVariableDefs.obj" "F2837xD_Gpio.obj" "F2837xD_Ipc.obj" "F2837xD_PieCtrl.obj" "F2837xD_PieVect.obj" "F2837xD_SysCtrl.obj" "F2837xD_usDelay.obj" "can.obj" "interrupt.obj" "main.obj" "sources\CommandPriorityQueue.obj" "sources\General.obj" "sources\ISL94212.obj" "sources\Queue.obj" "sources\Timer.obj" "sources\adc.obj" "sources\device_implementation.obj" "sources\my_can.obj" "sources\spi.obj" "sources\uart.obj" 
-	-$(RM) "F2837xD_Adc.d" "F2837xD_DefaultISR.d" "F2837xD_GlobalVariableDefs.d" "F2837xD_Gpio.d" "F2837xD_Ipc.d" "F2837xD_PieCtrl.d" "F2837xD_PieVect.d" "F2837xD_SysCtrl.d" "can.d" "interrupt.d" "main.d" "sources\CommandPriorityQueue.d" "sources\General.d" "sources\ISL94212.d" "sources\Queue.d" "sources\Timer.d" "sources\adc.d" "sources\device_implementation.d" "sources\my_can.d" "sources\spi.d" "sources\uart.d" 
+	-$(RM) "F2837xD_Adc.obj" "F2837xD_CodeStartBranch.obj" "F2837xD_DefaultISR.obj" "F2837xD_GlobalVariableDefs.obj" "F2837xD_Gpio.obj" "F2837xD_Ipc.obj" "F2837xD_PieCtrl.obj" "F2837xD_PieVect.obj" "F2837xD_SysCtrl.obj" "F2837xD_usDelay.obj" "can.obj" "interrupt.obj" "main.obj" "sources\CommandPriorityQueue.obj" "sources\General.obj" "sources\ISL94212.obj" "sources\Queue.obj" "sources\Timer.obj" "sources\adc.obj" "sources\device_implementation.obj" "sources\fault_handling.obj" "sources\my_can.obj" "sources\spi.obj" "sources\uart.obj" 
+	-$(RM) "F2837xD_Adc.d" "F2837xD_DefaultISR.d" "F2837xD_GlobalVariableDefs.d" "F2837xD_Gpio.d" "F2837xD_Ipc.d" "F2837xD_PieCtrl.d" "F2837xD_PieVect.d" "F2837xD_SysCtrl.d" "can.d" "interrupt.d" "main.d" "sources\CommandPriorityQueue.d" "sources\General.d" "sources\ISL94212.d" "sources\Queue.d" "sources\Timer.d" "sources\adc.d" "sources\device_implementation.d" "sources\fault_handling.d" "sources\my_can.d" "sources\spi.d" "sources\uart.d" 
 	-$(RM) "F2837xD_CodeStartBranch.d" "F2837xD_usDelay.d" 
 	-@echo 'Finished clean'
 	-@echo ' '

@@ -30,8 +30,20 @@
 #include "device_implementation.h"
 #include "Queue.h"
 #include "CommandPriorityQueue.h"
+#include "fault_handling.h"
+
+//common definitions to all
 
 #define DEBUG
 #define PARTIAL_LOG
+
+#define MAX_DEVICES         4
+#define UV_LIMIT            1.00
+#define UV_LIMIT_RECOV      1.20
+#define OV_LIMIT            3.5
+#define OV_LIMIT_RECOV      3.2
+#define OT_LIMIT            degC_35
+#define OT_LIMIT_RECOV      degC_30
+#define MAX_CELL_NUMBER     12
 
 #endif /* INCLUDES_ALL_HEADER_H_ */

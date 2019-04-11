@@ -14,6 +14,7 @@
 // Globals
 //
 extern Uint16 NowCurrent;
+Uint16 OverCurrentThreshold = 4095;
 
 void setup_adc()
 {

@@ -73,12 +73,14 @@ typedef struct {     // bits description
 } Parameters;
 
 typedef struct {
+    Bool IsFault;
 	Bool OverTemp;
 	Bool UnderTemp;
 	Bool OverVoltage;
 	Bool UnderVoltage;
 	Bool TempSensor;
 	Bool OpenWire;
+	Bool OverCurrent;
 
 }SummaryFaults;
 
@@ -118,7 +120,6 @@ Uint16 GetAvg(Uint16* Array, Uint8 Length);
 void InitializeAllParameters(void);
 Parameters* GetParameters(void);
 Bool MakeABool(Uint8 ToBeMade);
-SummaryFaults* CheckFaults(Uint8 device);
 void Setup(void);
 
 #endif /* GENERAL_H_ */
