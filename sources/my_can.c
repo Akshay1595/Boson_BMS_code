@@ -18,9 +18,13 @@ ISL_FLAGS* RecieveFlags;
 ISL_DEVICE* ISL_Struct;
 Uint8 CurrentDevice;
 Uint8 FailCounter=0x00;
-device_mailboxes  device_MBS[MAX_DEVICES];
-tCANMsgObject PackVoltages;
-Uint8 pack_voltages[8]={};                          // this array is for pack voltage variables
+
+tCANMsgObject INFO_MIN_MAX;
+tCANMsgObject ALL_IN_ONE;
+
+Uint8 DATA_MIN_MAX[8]={};
+Uint8 DATA_ALL_IN_ONE[8]={};
+
 tCANMsgObject sRXCANMessage;                        // this variable is for data receive
 
 /* can_init_GPIO:
@@ -88,29 +92,17 @@ void can_init()
  */
 void can_initialize_mailboxes()
 {
-    Uint8 device = 0;
+    INFO_MIN_MAX.ui32MsgIDMask = 0;
+    INFO_MIN_MAX.ui32Flags |= MSG_OBJ_EXTENDED_ID;
+    INFO_MIN_MAX.ui32MsgLen = MSG_DATA_LENGTH;
+    INFO_MIN_MAX.ui32MsgID = 0x0867;
+    INFO_MIN_MAX.pucMsgData = DATA_MIN_MAX;
 
-    for(device=0;device<MAX_DEVICES;device++)
-    {
-        device_MBS[device].CELLV_1_4.ui32MsgID = 0x500114 | ((device+1)<<12);
-        device_MBS[device].CELLV_1_4.pucMsgData = device_MBS[device].cell_V_1_4;
-
-        device_MBS[device].CELLV_5_8.ui32MsgID = 0x500158 | ((device+1)<<12);
-        device_MBS[device].CELLV_5_8.pucMsgData = device_MBS[device].cell_V_5_8;
-
-        device_MBS[device].CELLV_9_C.ui32MsgID = 0x50019C | ((device+1)<<12);
-        device_MBS[device].CELLV_9_C.pucMsgData = device_MBS[device].cell_V_9_C;
-
-        device_MBS[device].FAULT_DATA.ui32MsgID = 0x500200 | ((device+1)<<12);
-        device_MBS[device].FAULT_DATA.pucMsgData = device_MBS[device].all_fault;
-
-        device_MBS[device].TEMP_DATA.ui32MsgID = 0x500300 | ((device+1)<<12);
-        device_MBS[device].TEMP_DATA.pucMsgData = device_MBS[device].all_temp;
-    }
-    //initial packVoltage mailbox
-    PackVoltages.ui32Flags = MSG_OBJ_EXTENDED_ID;
-    PackVoltages.ui32MsgID = 0x514100;
-    PackVoltages.pucMsgData = pack_voltages;
+    ALL_IN_ONE.ui32MsgIDMask = 0;
+    ALL_IN_ONE.ui32Flags |= MSG_OBJ_EXTENDED_ID;
+    ALL_IN_ONE.ui32MsgID = 0x0868;
+    ALL_IN_ONE.ui32MsgLen = MSG_DATA_LENGTH;
+    ALL_IN_ONE.pucMsgData = DATA_ALL_IN_ONE;
 }
 
 void can_load_mailbox(tCANMsgObject* load_mailbox)
@@ -146,7 +138,8 @@ void RecieveHandler() {
         //ISL_Struct=GetISLDevices(CurrentDevice);                                              // Get the struct for the current device
         if(Header>>4==READ_VOLTAGES>>4){
         //BalanceCells(CurrentDevice-1);                                                          // If we recieve a balance status message do the balancing sequence
-        PackAndSendCellDetails(CurrentDevice-1);                                                // Pack the updated data and adjust for zero index
+        if(CurrentDevice == NumISLDevices)
+        PackAndSendCellDetails();                                                // Pack the updated data and adjust for zero index
         //PackAndSendModuleSummary(CurrentDevice-1);                                              // Pack and send the module summary
         //PackAndSendShelfSummary(CurrentDevice-1);                                               // Pack and send the shelf summary
         //PackAndSendShelfElectrical();                                                           // Pack and Send the shelf electrical
@@ -241,104 +234,57 @@ __interrupt void canbISR(void)
  * Please find summary and CAN ID in document
  * https://docs.google.com/spreadsheets/d/1kbmyRu-nIQbgxeYA9p3WfBMIfylLFetZoJmql5Y0KBc/edit?usp=sharing
  */
-void PackAndSendCellDetails(Uint8 device)
+void PackAndSendCellDetails()
 {
-    Uint16 voltage;
-
-    ISL_Struct = GetISLDevices(device);
-    voltage = ISL_Struct->PAGE1.CELLV.C1V;
-    device_MBS[device].cell_V_1_4[0] =  voltage & (0x00FF);
-    device_MBS[device].cell_V_1_4[1] =  (( 0xFF00 & voltage) >> 8 )&(0x00FF);
-    voltage = ISL_Struct->PAGE1.CELLV.C2V;
-    device_MBS[device].cell_V_1_4[2] =  voltage & (0x00FF);
-    device_MBS[device].cell_V_1_4[3] =  (( 0xFF00 & voltage) >> 8 )&(0x00FF);
-    voltage = ISL_Struct->PAGE1.CELLV.C3V;
-    device_MBS[device].cell_V_1_4[4] =  voltage & (0x00FF);
-    device_MBS[device].cell_V_1_4[5] =  (( 0xFF00 & voltage) >> 8 )&(0x00FF);
-    voltage = ISL_Struct->PAGE1.CELLV.C4V;
-    device_MBS[device].cell_V_1_4[6] =  voltage & (0x00FF);
-    device_MBS[device].cell_V_1_4[7] =  (( 0xFF00 & voltage) >> 8 )&(0x00FF);
-
-    voltage = ISL_Struct->PAGE1.CELLV.C5V;
-    device_MBS[device].cell_V_5_8[0] =  voltage & (0x00FF);
-    device_MBS[device].cell_V_5_8[1] =  (( 0xFF00 & voltage) >> 8 )&(0x00FF);
-    voltage = ISL_Struct->PAGE1.CELLV.C6V;
-    device_MBS[device].cell_V_5_8[2] =  voltage & (0x00FF);
-    device_MBS[device].cell_V_5_8[3] =  (( 0xFF00 & voltage) >> 8 )&(0x00FF);
-    voltage = ISL_Struct->PAGE1.CELLV.C7V;
-    device_MBS[device].cell_V_5_8[4] =  voltage & (0x00FF);
-    device_MBS[device].cell_V_5_8[5] =  (( 0xFF00 & voltage) >> 8 )&(0x00FF);
-    voltage = ISL_Struct->PAGE1.CELLV.C8V;
-    device_MBS[device].cell_V_5_8[6] =  voltage & (0x00FF);
-    device_MBS[device].cell_V_5_8[7] =  (( 0xFF00 & voltage) >> 8 )&(0x00FF);
-
-    voltage = ISL_Struct->PAGE1.CELLV.C9V;
-    device_MBS[device].cell_V_9_C[0] =  voltage & (0x00FF);
-    device_MBS[device].cell_V_9_C[1] =  (( 0xFF00 & voltage) >> 8 )&(0x00FF);
-    voltage = ISL_Struct->PAGE1.CELLV.C10V;
-    device_MBS[device].cell_V_9_C[2] =  voltage & (0x00FF);
-    device_MBS[device].cell_V_9_C[3] =  (( 0xFF00 & voltage) >> 8 )&(0x00FF);
-    voltage = ISL_Struct->PAGE1.CELLV.C11V;
-    device_MBS[device].cell_V_9_C[4] =  voltage & (0x00FF);
-    device_MBS[device].cell_V_9_C[5] =  (( 0xFF00 & voltage) >> 8 )&(0x00FF);
-    voltage = ISL_Struct->PAGE1.CELLV.C12V;
-    device_MBS[device].cell_V_9_C[6] =  voltage & (0x00FF);
-    device_MBS[device].cell_V_9_C[7] =  (( 0xFF00 & voltage) >> 8 )&(0x00FF);
-
-    //fault data packing
-    Uint16 fault;
-    fault = ISL_Struct->PAGE2_1.FAULT.UF.all;
-    device_MBS[device].all_fault[0] =  fault & (0x00FF);
-    device_MBS[device].all_fault[1] =  (( 0xFF00 & fault) >> 8 )&(0x00FF);
-    fault = ISL_Struct->PAGE2_1.FAULT.OF.all;
-    device_MBS[device].all_fault[2] =  fault & (0x00FF);
-    device_MBS[device].all_fault[3] =  (( 0xFF00 & fault) >> 8 )&(0x00FF);
-    fault = ISL_Struct->PAGE2_1.FAULT.OC.all;
-    device_MBS[device].all_fault[4] =  fault & (0x00FF);
-    device_MBS[device].all_fault[5] =  (( 0xFF00 & fault) >> 8 )&(0x00FF);
-    fault = ISL_Struct->PAGE2_1.FAULT.OVTF.all;
-    device_MBS[device].all_fault[6] =  fault & (0x00FF);
-    device_MBS[device].all_fault[7] =  (( 0xFF00 & fault) >> 8 )&(0x00FF);
-
-
-    //temperature data packing
-    Uint16 temperature;
-    temperature = ISL_Struct->PAGE1.TEMP.ET1V;
-    device_MBS[device].all_temp[0] =  temperature & (0x00FF);
-    device_MBS[device].all_temp[1] =  (( 0xFF00 & temperature) >> 8 )&(0x00FF);
-    temperature = ISL_Struct->PAGE1.TEMP.ET2V;
-    device_MBS[device].all_temp[2] =  temperature & (0x00FF);
-    device_MBS[device].all_temp[3] =  (( 0xFF00 & temperature) >> 8 )&(0x00FF);
-    temperature = ISL_Struct->PAGE1.TEMP.ET3V;
-    device_MBS[device].all_temp[4] =  temperature & (0x00FF);
-    device_MBS[device].all_temp[5] =  (( 0xFF00 & temperature) >> 8 )&(0x00FF);
-    temperature = ISL_Struct->PAGE1.TEMP.ET4V;
-    device_MBS[device].all_temp[6] =  temperature & (0x00FF);
-    device_MBS[device].all_temp[7] =  (( 0xFF00 & temperature) >> 8 )&(0x00FF);
-
-    can_load_mailbox(&device_MBS[device].CELLV_1_4);
-    DELAY_US(800);           //note that delay is must if delay is not there transmission skips some of the ids
-                            // found after some experiments
-    can_load_mailbox(&device_MBS[device].CELLV_5_8);
-    DELAY_US(800);
-    can_load_mailbox(&device_MBS[device].CELLV_9_C);
-    DELAY_US(800);
-    can_load_mailbox(&device_MBS[device].FAULT_DATA);
-    DELAY_US(800);
-    can_load_mailbox(&device_MBS[device].TEMP_DATA);
-    DELAY_US(800);
-
-    if (device == (NumISLDevices-1))
+    Uint16 voltage_array[MAX_CELL_NUMBER*MAX_DEVICES],temp_array[MAX_DEVICES*4],Vbat=0;
+    Uint16 Vcmax,Vcmin,Tcmax,Tcmin,Current,AmbientTemp;
+    Uint8 i,cell_no,Soc;
+    ISL_DEVICE *ISL_Struct;
+    for(i=0;i<NumISLDevices;i++)
     {
-        Uint8 i = 0 ;
-        for(;i < NumISLDevices; i++)
-        {
-            ISL_Struct = GetISLDevices(i);
-            voltage = ISL_Struct->PAGE1.CELLV.VB;
-            pack_voltages[i*2] =  voltage & (0x00FF);
-            pack_voltages[i*2+1] =  (( 0xFF00 & voltage) >> 8 )&(0x00FF);
-        }
-        can_load_mailbox(&PackVoltages);
-        DELAY_US(800);
+        ISL_Struct = GetISLDevices(i);
+        for(cell_no=1;cell_no<=MAX_CELL_NUMBER;cell_no++)
+            voltage_array[((i*12)+(cell_no-1))] = read_voltage(i, cell_no);
+
+        temp_array[i*4]     = ISL_Struct->PAGE1.TEMP.ET1V;
+        temp_array[i*4+1]   = ISL_Struct->PAGE1.TEMP.ET2V;
+        temp_array[i*4+2]   = ISL_Struct->PAGE1.TEMP.ET3V;
+        temp_array[i*4+3]   = ISL_Struct->PAGE1.TEMP.ET4V;
+
+        Vbat += ISL_Struct->PAGE1.CELLV.VB;
     }
+
+    Vcmax = (0x3FFF) & (voltage_array[GetMax(voltage_array, (MAX_CELL_NUMBER*NumISLDevices))]);
+    Vcmin = (0x3FFF) & (voltage_array[GetMin(voltage_array, (MAX_CELL_NUMBER*NumISLDevices))]);
+    Tcmax = (0x3FFF) & (temp_array[GetMin(temp_array, 4*MAX_DEVICES)]);
+    Tcmin = (0x3FFF) & (temp_array[GetMax(temp_array, 4*MAX_DEVICES)]);
+
+    Soc = (Uint8)get_current_soc();
+    Current = GetNowCurrent();
+    AmbientTemp = 0x00;
+
+    DATA_ALL_IN_ONE[0] = Soc;
+    DATA_ALL_IN_ONE[1] = 0xFF & Current;            //lower byte
+    DATA_ALL_IN_ONE[2] = 0xFF & (Current >>8);      //higher byte
+    DATA_ALL_IN_ONE[3] = Vbat & 0xFF;               //lower byte
+    DATA_ALL_IN_ONE[4] = 0xFF & (Vbat >> 8);        //higher byte
+    DATA_ALL_IN_ONE[5] = 0xFF & AmbientTemp;
+    DATA_ALL_IN_ONE[6] = 0xFF & (AmbientTemp>>8);
+    DATA_ALL_IN_ONE[7] = 0x00;                      //reserved
+
+
+    DATA_MIN_MAX[0] = 0xFF & (Vcmax);
+    DATA_MIN_MAX[1] = 0xFF & (Vcmax>>8);
+    DATA_MIN_MAX[2] = 0xFF & (Vcmin);
+    DATA_MIN_MAX[3] = 0xFF & (Vcmin >> 8);
+    DATA_MIN_MAX[4] = 0xFF & (Tcmax);
+    DATA_MIN_MAX[5] = 0xFF & (Tcmax >> 8);
+    DATA_MIN_MAX[6] = 0xFF & (Tcmin);
+    DATA_MIN_MAX[7] = 0xFF & (Tcmin>>8);
+
+
+    can_load_mailbox(&INFO_MIN_MAX);
+    DELAY_US(800);
+    can_load_mailbox(&ALL_IN_ONE);
+    DELAY_US(800);
 }

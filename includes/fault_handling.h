@@ -10,11 +10,19 @@
 
 #define FAULT_LED 2
 
+//fault coding
+#define FAULT_UV      0x01
+#define FAULT_OV      0x02
+#define FAULT_OVTF    0x03
+#define FAULT_OW      0x04
+#define FAULT_OC      0x05
+
 void fault_isr(void);
 void FaultLEDOn(void);
 void FaultLEDOff(void);
 Bool checkForFault(void);
-void alert_ecu(Uint8 device);
+void alert_ecu(void);
+void ConfigureFaultSetup(void);
 void clear_all_fault(void);
 void handle_fault(void);
 SummaryFaults* CheckFaults(Uint8 device);

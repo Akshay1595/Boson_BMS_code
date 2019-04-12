@@ -476,3 +476,7 @@ void partial_log()
     }
 #endif
 }
+void read_ambient_temp(void)
+{
+
+}

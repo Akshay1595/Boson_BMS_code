@@ -38,7 +38,7 @@
 #define PARTIAL_LOG
 
 #define MAX_DEVICES         4
-#define UV_LIMIT            1.00
+#define UV_LIMIT            0.555
 #define UV_LIMIT_RECOV      1.20
 #define OV_LIMIT            3.5
 #define OV_LIMIT_RECOV      3.2

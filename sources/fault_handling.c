@@ -18,7 +18,8 @@
 
 volatile SummaryFaults AllFaults[MAX_DEVICES];
 volatile ISL_FLAGS *currentFlags;
-
+tCANMsgObject FaultMessage;
+Uint8 Fault_data[8] = {};
 
 void fault_isr(void)
 {
@@ -66,11 +67,20 @@ void FaultLEDOff()
     GpioDataRegs.GPACLEAR.bit.GPIO2 = 1;
 }
 
-void ConfigureFaultSetup()
+void ConfigureFaultSetup(void)
 {
     //GPIO Fault LED Pin
     GPIO_SetupPinMux(FAULT_LED, GPIO_MUX_CPU1, 0);
     GPIO_SetupPinOptions(FAULT_LED, GPIO_OUTPUT, GPIO_PUSHPULL);
+    FaultLEDOff();
+
+    //setup CAN message
+    FaultMessage.ui32MsgLen = 1;
+    FaultMessage.ui32MsgIDMask = 0;
+    FaultMessage.ui32MsgID = 0x21;
+    FaultMessage.ui32Flags |= MSG_OBJ_EXTENDED_ID;
+    FaultMessage.pucMsgData = Fault_data;
+
 }
 Bool checkForFault(void)
 {
@@ -85,8 +95,36 @@ Bool checkForFault(void)
     return is_fault;
 }
 
-void alert_ecu(Uint8 device)
+void alert_ecu()
 {
+    Uint8 CurrentDevice;
+    for(CurrentDevice=0;CurrentDevice<NumISLDevices;CurrentDevice++)
+    {
+        if (AllFaults[CurrentDevice].IsFault == True)
+        {
+            Fault_data[0] |= (CurrentDevice & 0x0F);
+        #ifdef DEBUG
+            Uint8 buf[3]={};
+            uart_string("Device : ");
+            my_itoa(CurrentDevice, buf);
+            uart_string(buf);
+            uart_string("\tFaults seen :");
+            if(AllFaults[CurrentDevice].UnderVoltage == True){
+                uart_string("\tUV=1");  Fault_data[0] |= 0xF0 &(FAULT_UV <<4);}
+            if(AllFaults[CurrentDevice].OverVoltage == True){
+                uart_string("\tOV=1");Fault_data[0] |= 0xF0 &(FAULT_OV <<4);}
+            if(AllFaults[CurrentDevice].OverTemp == True){
+                uart_string("\tOVTF=1");Fault_data[0] |= 0xF0 &(FAULT_OVTF <<4);}
+            if(AllFaults[CurrentDevice].OverCurrent == True){
+                uart_string("\tOC=1");Fault_data[0] |= 0xF0 &(FAULT_OC <<4);}
+            if(AllFaults[CurrentDevice].OpenWire == True){
+                uart_string("\tOW=1");Fault_data[0] |= 0xF0 &(FAULT_OW <<4);}
+            uart_string("\r\n");
+        #endif
+            can_load_mailbox(&FaultMessage);
+        }
+    }
+
 }
 
 #pragma CODE_SECTION(InitializeISLParameters,".bigCode")
@@ -99,7 +137,7 @@ void handle_fault(void)
     AGAIN:
 
     //step1: notify ECU
-    //alert_ecu(device);
+    alert_ecu();
 
     //step2: turn off the contactor
     contactor_off();
@@ -137,7 +175,6 @@ void handle_fault(void)
     contactor_on();
     ISL_EnableReceiveCallback();
 }
-
 void recover_from_faults(void)
 {
     Uint8 CurrentDevice;

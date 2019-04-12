@@ -16,7 +16,6 @@
  *      attached to BMS, read data continuously and check for fault
  */
 //###########################################################################
-
 //
 // Included Files
 //
@@ -42,10 +41,8 @@ void main(void)
              partial_log();
 #endif
              fault_isr();
-
     }
 }
-
 //
 // End of File
 //

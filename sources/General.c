@@ -304,6 +304,9 @@ void Setup() {
 
 	EDIS;
 
+    //------------------------------UART init-----------------------------//
+    uart_init();
+
 #ifdef DEBUG
     uart_string("Contactor initially off.....!");
 #endif
@@ -314,8 +317,6 @@ void Setup() {
 #ifdef DEBUG
     uart_string_newline("ADC Complete!");
 #endif
-	//------------------------------UART init-----------------------------//
-	uart_init();
 #ifdef DEBUG
     uart_string_newline("Setup Complete!");
 #endif
@@ -331,6 +332,7 @@ void Setup() {
 #ifdef DEBUG
     uart_string_newline("CAN Setup Complete!");
 #endif
+    ConfigureFaultSetup();
     //SPI_Test();
     Bool Did_it_blend;
 
