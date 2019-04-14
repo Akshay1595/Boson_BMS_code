@@ -230,14 +230,25 @@ void balance_all(Uint8 device,Uint16 all_data)
 }
 void contactor_on(void)
 {
-    //GPIO31 is connected to contactor
-    GpioDataRegs.GPACLEAR.bit.GPIO31 = 1;
+#ifdef DEBUG
+    uart_string("Contactor On!\r\n");
+#endif
+
+    GPIO_WritePin(CONTACTOR_PIN, 1);
 }
 void contactor_off(void)
 {
+#ifdef DEBUG
+    uart_string("Contactor off!\r\n");
+#endif
     //GPIO31 is connected to contactor
-    GpioDataRegs.GPASET.bit.GPIO31 = 1;
+    GPIO_WritePin(CONTACTOR_PIN, 0);
 
+}
+void contactor_gpio_setup()
+{
+    GPIO_SetupPinMux(CONTACTOR_PIN, GPIO_MUX_CPU1, 0);
+    GPIO_SetupPinOptions(CONTACTOR_PIN, GPIO_OUTPUT, GPIO_PUSHPULL);
 }
 Uint16 get_current_soc(void)
 {
@@ -479,4 +490,24 @@ void partial_log()
 void read_ambient_temp(void)
 {
 
+}
+void COMMLEDSetup()
+{
+    EALLOW;
+    GpioCtrlRegs.GPAMUX2.bit.GPIO19 = 0;  // GPIO6 = GPIO6
+    GpioCtrlRegs.GPADIR.bit.GPIO19 = 1;   // GPIO6 = output
+    GpioCtrlRegs.GPAPUD.bit.GPIO19 = 0;   // Enable pullup on GPIO6
+    EDIS;
+}
+void COMLEDOn()
+{
+    GpioDataRegs.GPASET.bit.GPIO19 = 1;   // Load output latch
+}
+void COMLEDOff()
+{
+    GpioDataRegs.GPACLEAR.bit.GPIO19 = 1;   // Load output latch
+}
+void COMMLEDToggle()
+{
+    GpioDataRegs.GPATOGGLE.bit.GPIO19 = 1;   // Load output latch
 }

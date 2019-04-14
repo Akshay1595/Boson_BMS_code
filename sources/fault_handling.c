@@ -59,12 +59,12 @@ SummaryFaults* CheckFaults(Uint8 device){
 }
 void FaultLEDOn()
 {
-    GpioDataRegs.GPASET.bit.GPIO2 = 1;
+    GPIO_WritePin(FAULT_LED, 1);
 }
 
 void FaultLEDOff()
 {
-    GpioDataRegs.GPACLEAR.bit.GPIO2 = 1;
+    GPIO_WritePin(FAULT_LED, 0);
 }
 
 void ConfigureFaultSetup(void)
@@ -131,11 +131,11 @@ void alert_ecu()
 void handle_fault(void)
 {
 
+    FaultLEDOn();
     //disable receive callback so that this callback doesn't hinder normal fault handling
     ISL_DisableReceiveCallback();
 
     AGAIN:
-
     //step1: notify ECU
     alert_ecu();
 

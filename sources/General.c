@@ -281,57 +281,27 @@ void Setup() {
 
     // Setup GPIO LED
 	EALLOW;
-	//GPIO Module Enable Pin
-	GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 0;										// 0=GPIO,  1=CANTX-A,  2=Resv,  3=Resv
-	GpioCtrlRegs.GPADIR.bit.GPIO0 = 1;										// 1=OUTput,  0=INput
-	GpioDataRegs.GPASET.bit.GPIO0 = 1;										// Set High initially
-
-
-	//GPIO BLUE LED
-	GpioCtrlRegs.GPBMUX1.bit.GPIO34 = 0;										// 0=GPIO,  1=CANTX-A,  2=Resv,  3=Resv
-	GpioCtrlRegs.GPBDIR.bit.GPIO34 = 1;										// 1=OUTput,  0=INput
-	GpioDataRegs.GPBCLEAR.bit.GPIO34 = 1;										// Set Low
 
 	//GPIO GREEN LED FOR CONTACTOR
 	GpioCtrlRegs.GPAMUX2.bit.GPIO31 = 0;										// 0=GPIO,  1=CANTX-A,  2=Resv,  3=Resv
 	GpioCtrlRegs.GPADIR.bit.GPIO31 = 1;										// 1=OUTput,  0=INput
 	GpioDataRegs.GPASET.bit.GPIO31 = 1;										// Set High initially
 
-	//GPIO REDLED
-	GpioCtrlRegs.GPAMUX1.bit.GPIO10 = 0;										// 0=GPIO,  1=CANTX-A,  2=Resv,  3=Resv
-	GpioCtrlRegs.GPADIR.bit.GPIO10 = 1;										// 1=OUTput,  0=INput
-	GpioDataRegs.GPASET.bit.GPIO10 = 1;										// Set High initially
-
 	EDIS;
 
     //------------------------------UART init-----------------------------//
     uart_init();
 
-#ifdef DEBUG
-    uart_string("Contactor initially off.....!");
-#endif
     contactor_off();
 
 	//------------------------------Initialize ADC------------------------//
+    contactor_gpio_setup();
 	setup_adc();
-#ifdef DEBUG
-    uart_string_newline("ADC Complete!");
-#endif
-#ifdef DEBUG
-    uart_string_newline("Setup Complete!");
-#endif
     TMR_Init();
-#ifdef DEBUG
-    uart_string_newline("Timer Setup Complete!");
-#endif
     SPI_Init();
-#ifdef DEBUG
-    uart_string_newline("SPI Setup Complete!");
-#endif
     can_init();
-#ifdef DEBUG
-    uart_string_newline("CAN Setup Complete!");
-#endif
+    COMMLEDSetup();
+    COMLEDOff();
     ConfigureFaultSetup();
     //SPI_Test();
     Bool Did_it_blend;
@@ -340,15 +310,17 @@ void Setup() {
 
     if (Did_it_blend == True)
     {
+        COMLEDOn();
 #ifdef DEBUG
-        uart_string_newline("Yes it has connected Successfully!");
+        uart_string("Yes it has connected Successfully!\r\n");
 #endif
     }
     else
     {
 #ifdef DEBUG
-        uart_string_newline("I couldn't find ISL devices!");
+        uart_string("I couldn't find ISL devices!\r\n");
 #endif
+        FaultLEDOn();
         while(1);
     }
 
@@ -366,6 +338,10 @@ void Setup() {
     uart_string(_buf);
 #ifdef DEBUG
     uart_string(" devices!\r\n");
+#endif
+
+#ifdef DEBUG
+    uart_string("Setup Complete!\r\n");
 #endif
 
     InitializeISLParameters(NumISLDevices);                                 // Initialize the default values into the ISL Registers

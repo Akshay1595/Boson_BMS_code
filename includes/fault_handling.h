@@ -8,7 +8,7 @@
 #ifndef INCLUDES_FAULT_HANDLING_H_
 #define INCLUDES_FAULT_HANDLING_H_
 
-#define FAULT_LED 2
+#define FAULT_LED 32
 
 //fault coding
 #define FAULT_UV      0x01

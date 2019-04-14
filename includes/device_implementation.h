@@ -10,6 +10,8 @@
 #ifndef DEVICE_IMPLEMENTATION_H_
 #define DEVICE_IMPLEMENTATION_H_
 
+#define CONTACTOR_PIN 31
+
 #include "F28x_project.h"
 #include "ISL94212.h"
 
@@ -49,6 +51,11 @@ typedef enum{
 
 extern Uint16 NowCurrent;
 
+void COMMLEDSetup(void);
+void COMLEDOn(void);
+void COMLEDOff(void);
+void COMMLEDToggle(void);
+
 double ConvertTemperature(Uint16 Raw);
 double read_temp(Uint8 device,Uint8 temp_sensor_no);
 Uint16 read_voltage(Uint8 device,Uint8 cell_no);
@@ -60,6 +67,7 @@ void balance_off(Uint8 device,Uint8 cell_no);
 void balance_all(Uint8 device,Uint16 all_data);
 void contactor_on(void);
 void contactor_off(void);
+void contactor_gpio_setup(void);
 Uint16 get_current_soc(void);
 double get_battery_voltage(void);
 void log_data(void);

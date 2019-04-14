@@ -60,7 +60,9 @@ void setup_adc()
     EPwm5Regs.ETSEL.bit.SOCAEN = 1;  //enable SOCA
     EPwm5Regs.TBCTL.bit.CTRMODE = 0; //unfreeze, and enter up count mode
 
-
+#ifdef DEBUG
+    uart_string("ADC Setup Complete!\r\n");
+#endif
 }
 
 //

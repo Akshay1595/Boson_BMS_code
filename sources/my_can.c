@@ -85,6 +85,11 @@ void can_init()
     //
     CANEnable(CAN_BASE);
     can_initialize_mailboxes();
+
+#ifdef DEBUG
+    uart_string("CAN Setup Complete!\r\n");
+#endif
+
 }
 
 /*

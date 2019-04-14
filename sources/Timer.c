@@ -67,6 +67,10 @@ void TMR_Init() {
     PieCtrlRegs.PIEIER3.bit.INTx3 = PWM_INT_ENABLE;
     PieCtrlRegs.PIEIER3.bit.INTx4 = PWM_INT_ENABLE;
 	EnableISR();
+
+#ifdef DEBUG
+    uart_string("Timer Setup Complete!\r\n");
+#endif
 }
 
 /**

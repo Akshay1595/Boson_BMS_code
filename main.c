@@ -33,6 +33,7 @@ void main(void)
     DELAY_S(1);
 
     while(1) {
+             COMMLEDToggle();
              GetISLData(NumISLDevices);
              DELAY_S(1);
 #ifndef PARTIAL_LOG

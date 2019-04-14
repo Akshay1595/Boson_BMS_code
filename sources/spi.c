@@ -71,14 +71,6 @@ void SPI_Init() {
     SpiaRegs.SPICCR.all =0x0087;          // Relinquish SPI from Reset
     SpiaRegs.SPIPRI.bit.FREE = 1;         // Set so breakpoints don't disturb xmission
 
-    // Enable GPIO Chip Select
-    EALLOW;
-    GpioDataRegs.GPASET.bit.GPIO19 = 1;   // Load output latch
-    GpioCtrlRegs.GPAMUX2.bit.GPIO19 = 0;  // GPIO6 = GPIO6
-    GpioCtrlRegs.GPADIR.bit.GPIO19 = 1;   // GPIO6 = output
-    GpioCtrlRegs.GPAPUD.bit.GPIO19 = 0;   // Enable pullup on GPIO6
-    EDIS;
-
     // Set callback for timeout
     SPI_SetTimerCallback(SPI_TMR_ISR);
 
@@ -109,6 +101,9 @@ void SPI_Init() {
     XintRegs.XINT1CR.bit.ENABLE = 1;        // Enable XINT1
 
     EnableISR();
+#ifdef DEBUG
+    uart_string("SPI Setup Complete!\r\n");
+#endif
 }
 
 void SPI_Test() {
@@ -293,7 +288,7 @@ Bool SPI_Read(unsigned char* buff) {
     SpiaRegs.SPICTL.bit.CLK_PHASE = 0;
 
     // Bring chip select low
-    GpioDataRegs.GPACLEAR.bit.GPIO19 = 1;   // Clear output latch and pad
+    GpioDataRegs.GPBCLEAR.bit.GPIO61 = 1;   // Clear output latch and pad
     DELAY_US(SPI_CS_PRE_PADDING);
 
     // Read until interrupt is clear
@@ -312,7 +307,7 @@ Bool SPI_Read(unsigned char* buff) {
 
     // Bring chip select high
     DELAY_US(SPI_CS_POST_PADDING);
-    GpioDataRegs.GPASET.bit.GPIO19 = 1;   // Pad and set output latch
+    GpioDataRegs.GPBSET.bit.GPIO61 = 1;   // Pad and set output latch
 
     return True;
 }
@@ -326,7 +321,7 @@ Bool SPI_Write(unsigned char* buff) {
     DisableISR();
 
     // Bring chip select low
-    GpioDataRegs.GPACLEAR.bit.GPIO19 = 1;   // Clear output latch and pad
+    GpioDataRegs.GPBCLEAR.bit.GPIO61 = 1;   // Clear output latch and pad
     DELAY_US(SPI_CS_PRE_PADDING);
 
     // Xmit 8 bits of data
@@ -343,7 +338,7 @@ Bool SPI_Write(unsigned char* buff) {
 
     // Bring chip select high
     DELAY_US(SPI_CS_POST_PADDING);
-    GpioDataRegs.GPASET.bit.GPIO19 = 1;   // Pad and set output latch
+    GpioDataRegs.GPBSET.bit.GPIO61 = 1;   // Pad and set output latch
 
     EnableISR();
 
