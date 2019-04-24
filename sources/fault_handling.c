@@ -143,7 +143,7 @@ void handle_fault(void)
     contactor_off();
 
 #ifdef DEBUG
-    uart_string_newline("Fault detected hence turning off the contactor first and waiting for fault recovery\r\n");
+    uart_string("Fault detected hence turning off the contactor first and waiting for fault recovery\r\n");
 #endif
 
     //step3: wait for fault_recovery

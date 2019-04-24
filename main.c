@@ -26,12 +26,6 @@
 void main(void)
 {
     Setup();
-    GetISLData(NumISLDevices);                      //read before turning On Contactor
-    DELAY_S(1);
-    fault_isr();
-    contactor_on();
-    DELAY_S(1);
-
     while(1) {
              COMMLEDToggle();
              GetISLData(NumISLDevices);

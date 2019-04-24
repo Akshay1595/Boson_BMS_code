@@ -250,9 +250,119 @@ void contactor_gpio_setup()
     GPIO_SetupPinMux(CONTACTOR_PIN, GPIO_MUX_CPU1, 0);
     GPIO_SetupPinOptions(CONTACTOR_PIN, GPIO_OUTPUT, GPIO_PUSHPULL);
 }
-Uint16 get_current_soc(void)
+
+//calculation of SOC based on lookup table
+float get_current_soc(void)
 {
+
+    float soc_table[77][2] = {
+        114.1764288, 99.99720885,
+        114.1745829, 99.99696726,
+        114.1703619, 99.99641468,
+        114.1661426, 99.99586211,
+        114.1619251, 99.99530957,
+        114.1577092, 99.99475704,
+        114.1534951, 99.99420454,
+        114.1492827, 99.99365206,
+        114.1388897, 99.99228807,
+        114.128507,  99.99092421,
+        114.1181349, 99.98956047,
+        114.1077731, 99.98819686,
+        114.0974217, 99.98683336,
+        114.0870808, 99.98547,
+        114.0651558, 99.98257526,
+        114.0432776, 99.97968107,
+        114.0214459, 99.97678744,
+        113.9996608, 99.97389436,
+        113.977922,  99.97100184,
+        113.7982798, 99.94688216,
+        113.6217959, 99.92280016,
+        113.44841,   99.89875522,
+        113.2780616, 99.87474668,
+        112.4389919, 99.75046182,
+        111.6727983, 99.62706108,
+        110.9725149, 99.50446739,
+        110.3319331, 99.38261133,
+        109.7455048, 99.26143024,
+        108.5900801, 98.98865642,
+        107.6394421, 98.71850126,
+        106.8547731, 98.45050626,
+        106.2051081, 98.18429905,
+        105.6655965, 97.91957489,
+        105.216252,  97.65608373,
+        104.5926971, 97.19122094,
+        104.1355578, 96.72871771,
+        103.7978565, 96.26795485,
+        103.5461958, 95.80849389,
+        103.3566186, 95.35001522,
+        103.2120474,94.89228031,
+        103.0443095, 94.1578326,
+        102.9289502, 93.42435591,
+        102.8460618, 92.69156569,
+        102.7830361, 91.95930376,
+        102.7319348, 91.22746788,
+        102.6880141, 90.49598056,
+        102.6096008, 89.00171248,
+        102.5380211, 87.50850241,
+        102.4681799, 86.01631805,
+        102.3973228, 84.52517724,
+        102.3243485, 83.03510275,
+        102.2491024, 81.54610456,
+        102.0982353, 78.7009122,
+        101.9376967, 75.86002561,
+        101.7658907, 73.02375214,
+        101.5814426, 70.192462,
+        101.3831786, 67.36651203,
+        101.169613,  64.54627358,
+        100.8001805, 60.14592184,
+        100.3799965, 55.76271777,
+        99.89819018, 51.39910049,
+        99.34058937, 47.05805905,
+        98.68837467, 42.74329427,
+        97.91614907, 38.45945878,
+        96.98889774, 34.21250613,
+        95.85713077, 30.01021248,
+        94.44891849, 25.86297484,
+        92.65637549, 21.78507156,
+        90.31193616, 17.79673209,
+        87.14811891, 13.92807774,
+        82.71204674, 10.2243277,
+        76.23264744, 6.75669091,
+        66.46582638, 3.640595218,
+        62.62586369, 2.795770549,
+        58.31494473, 2.004380491,
+        53.52530405, 1.272808821,
+        48.28517327, 0.6069323966
+    };
     //do nothing
+    int8 i = 76;
+    float input_value = get_battery_voltage();
+
+    //if voltage is more than max available in truth table then SOC will be obviously 100%
+    if(input_value > soc_table[i][0])
+        return 100.00;
+    else if(input_value < soc_table[0][0])
+        return 0.00;
+
+    for(i=76;i>0;i--)
+    {
+        //printf("checking %f and %f with %f\n",soc_table[i][0],soc_table[i+1][0],input_value);
+        if((input_value < soc_table[i][0]) && (input_value > soc_table[i+1][0]) )
+        {
+            //printf("%f is less than %f and greater than %f soc = %f\t",input_value,soc_table[i][0],soc_table[i+1][0],soc_table[i][1]);
+            if((soc_table[i][0] - input_value) < (soc_table[i+1][0] - input_value) )
+            {
+                return soc_table[i][1];
+                //printf("SOC = %f\n",soc_table[i][1]);
+            }
+            else
+            {
+                return soc_table[i+1][1];
+                //printf("SOC = %f\n",soc_table[i+1][1]);
+            }
+            break;
+        }
+    }
     return 0;
 }
 void write_undervoltage_threshold(Uint8 device,float uv_voltage)
@@ -284,12 +394,12 @@ void disable_cell_from_faulting(Uint8 device,Uint8* array)
     for(i=0;i<8;i++)
     {
         if(array[i])
-            CellSetup[0] |= (1<<i);
+            CellSetup[1] |= (1<<i);
     }
     for(i=8;i<12;i++)
     {
         if(array[i])
-            CellSetup[1] |= (1<<(i-8));
+            CellSetup[0] |= (1<<(i-8));
     }
     ISL_WriteRegister(device,2,0x05,CellSetup);
 }
@@ -446,20 +556,22 @@ void set_over_temperature_limit(Uint8 device,Uint8 degreeC)
 void partial_log()
 {
 #ifdef PARTIAL_LOG
-    Uint16 V_array[12]={},Vcmin,Vcmax,i=0,Vpack;
+    Uint16 V_array[7]={},Vcmin,Vcmax,i=0,Vpack;
     Uint16 Temp_array[4] = {};
     double F_value;
-    Uint8 cell_no=1;
+    Uint8 cell_no=1,index=0;
     Uint8 buf[16] = {};
     for(i=0;i<NumISLDevices;i++)
     {
         //get Vcmax
-        for(;cell_no <= MAX_CELL_NUMBER ; cell_no++)
+        index = 0;
+        for(cell_no = 1;cell_no <= 12 ; cell_no++)
         {
-            V_array[(cell_no-1)] = read_voltage(i, cell_no);
+            if( (cell_no != 9) && (cell_no != 5) && (cell_no != 6) &&(cell_no!=7) && (cell_no != 8))
+            V_array[index++] = read_voltage(i, cell_no);
         }
-        Vcmax=(Uint16)GetMax(V_array, 12);      //get the array index
-        Vcmin=(Uint16)GetMin(V_array, 12);
+        Vcmax=(Uint16)GetMax(V_array, 7);      //get the array index
+        Vcmin=(Uint16)GetMin(V_array, 7);
         Vcmax = V_array[Vcmax];                 //get the value same variable for saving memory
         Vcmin = V_array[Vcmin];
         Vpack = read_voltage(i, 0);
@@ -478,12 +590,12 @@ void partial_log()
         somevalue = ISLData->PAGE2_1.FAULT.OVTF.all;somevalue = (somevalue>>1) & 0x000F;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
         somevalue = ISLData->PAGE2_1.FAULT.UF.all;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
         somevalue = ISLData->PAGE2_1.FAULT.OF.all;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
-        somevalue = ISLData->PAGE2_1.FAULT.OC.all;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
+        somevalue = ISLData->PAGE2_1.FAULT.OC.all;my_itoa(somevalue, buf);uart_string(buf);
 
         if(i == NumISLDevices-1)
             uart_string("\r\n");
         else
-            uart_xmit(',');
+            uart_xmit(', ,');
     }
 #endif
 }

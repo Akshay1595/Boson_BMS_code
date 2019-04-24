@@ -241,16 +241,19 @@ __interrupt void canbISR(void)
  */
 void PackAndSendCellDetails()
 {
-    Uint16 voltage_array[MAX_CELL_NUMBER*MAX_DEVICES],temp_array[MAX_DEVICES*4],Vbat=0;
+    Uint16 voltage_array[7*MAX_DEVICES],temp_array[MAX_DEVICES*4],Vbat=0;
     Uint16 Vcmax,Vcmin,Tcmax,Tcmin,Current,AmbientTemp;
-    Uint8 i,cell_no,Soc;
+    Uint8 i,cell_no,Soc,index=0;
     ISL_DEVICE *ISL_Struct;
     for(i=0;i<NumISLDevices;i++)
     {
+        index=0;
         ISL_Struct = GetISLDevices(i);
         for(cell_no=1;cell_no<=MAX_CELL_NUMBER;cell_no++)
-            voltage_array[((i*12)+(cell_no-1))] = read_voltage(i, cell_no);
-
+        {
+            if( (cell_no != 9) && (cell_no != 5) && (cell_no != 6) && (cell_no!=7) && (cell_no != 8))
+            voltage_array[((i*7)+(index++))] = read_voltage(i, cell_no);
+        }
         temp_array[i*4]     = ISL_Struct->PAGE1.TEMP.ET1V;
         temp_array[i*4+1]   = ISL_Struct->PAGE1.TEMP.ET2V;
         temp_array[i*4+2]   = ISL_Struct->PAGE1.TEMP.ET3V;
@@ -259,12 +262,12 @@ void PackAndSendCellDetails()
         Vbat += ISL_Struct->PAGE1.CELLV.VB;
     }
 
-    Vcmax = (0x3FFF) & (voltage_array[GetMax(voltage_array, (MAX_CELL_NUMBER*NumISLDevices))]);
-    Vcmin = (0x3FFF) & (voltage_array[GetMin(voltage_array, (MAX_CELL_NUMBER*NumISLDevices))]);
+    Vcmax = (0x3FFF) & (voltage_array[GetMax(voltage_array, (7*NumISLDevices))]);
+    Vcmin = (0x3FFF) & (voltage_array[GetMin(voltage_array, (7*NumISLDevices))]);
     Tcmax = (0x3FFF) & (temp_array[GetMin(temp_array, 4*MAX_DEVICES)]);
     Tcmin = (0x3FFF) & (temp_array[GetMax(temp_array, 4*MAX_DEVICES)]);
 
-    Soc = (Uint8)get_current_soc();
+    Soc = (unsigned char)((get_current_soc()*256)/100);
     Current = GetNowCurrent();
     AmbientTemp = 0x00;
 

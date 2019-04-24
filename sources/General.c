@@ -89,7 +89,7 @@ void InitializeISLParameters(Uint8 NumDevices){
 	BalanceEnable[0]=0x2;
 	DeviceSetup[0]=0x00;
 	DeviceSetup[1]=0x80;																		//Dont  Measure while balancing
-	Uint8 disable_cell_array[12] = {0,0,0,0, 0,0,0,0, 0,0,0,0};                                  // we dont want to disable any cell hence we are keeping
+	Uint8 disable_cell_array[12] = {0,0,0,0, 1,1,1,1, 1,0,0,0};                                  // we dont want to disable any cell hence we are keeping
 	                                                                                            // all zeros if cell1 we want to disable arr[0] = 1
 	Fault_setup[1]  = 0x60; //default tot0 and tot1 to 11 which takes 8 sample at scan interval of 16ms
 	Fault_setup[0]  = 0x1F; //enable external temperature devices to fault
@@ -109,7 +109,7 @@ void InitializeISLParameters(Uint8 NumDevices){
     uart_string_newline("OVTF limit set to = ");
     my_itoa(OT_LIMIT, buf);
     uart_string(buf);
-    uart_string("degreeC");
+    uart_string("degreeC\r\n");
 #endif
 
     for(i=1;i<=NumDevices;i++){
@@ -346,10 +346,17 @@ void Setup() {
 
     InitializeISLParameters(NumISLDevices);                                 // Initialize the default values into the ISL Registers
 
+    GetISLData(NumISLDevices);                                              //read before turning On Contactor
+    DELAY_S(2);
+    fault_isr();
+    contactor_on();
+    DELAY_S(1);
+
+
 #ifdef DEBUG
     #ifdef PARTIAL_LOG
-    uart_string(",,,,Device1,,,,,,,,,,Device2,,,,,,,,,,Device3,,,,,,,,,,Device4,,,,,,\r\n");
-    uart_string("Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW,,Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW,,Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW,,Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW\r\n");
+    uart_string(",,,,Device1,,,,,,,,,Device2,,,,,,,,,Device3,,,,,,,,,Device4,,,,,,\r\n");
+    uart_string("Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW,Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW,Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW,Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW\r\n");
     #endif
 #endif
 }
