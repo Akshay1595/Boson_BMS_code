@@ -212,7 +212,7 @@ Uint16 Now_amb_temp(void)
 //Convert 16bit value into temperature
 double _ConvertTemperature(Uint16 tempValue)
 {
-    Uint16 offset = 1600;
+    Uint16 offset = 0;
     double Vin_by_Vo = (double) 4095/(double)tempValue;
     double r1 = 10 * 1000;
     double Rt = (r1 / (Vin_by_Vo - 1)) + offset;
