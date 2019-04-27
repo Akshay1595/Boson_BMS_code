@@ -98,14 +98,14 @@ void can_init()
 void can_initialize_mailboxes()
 {
     INFO_MIN_MAX.ui32MsgIDMask = 0;
-    INFO_MIN_MAX.ui32Flags |= MSG_OBJ_EXTENDED_ID;
+    INFO_MIN_MAX.ui32Flags = 0;
     INFO_MIN_MAX.ui32MsgLen = MSG_DATA_LENGTH;
-    INFO_MIN_MAX.ui32MsgID = 0x0867;
+    INFO_MIN_MAX.ui32MsgID = 0x0502;
     INFO_MIN_MAX.pucMsgData = DATA_MIN_MAX;
 
     ALL_IN_ONE.ui32MsgIDMask = 0;
-    ALL_IN_ONE.ui32Flags |= MSG_OBJ_EXTENDED_ID;
-    ALL_IN_ONE.ui32MsgID = 0x0868;
+    ALL_IN_ONE.ui32Flags = 0;
+    ALL_IN_ONE.ui32MsgID = 0x0501;
     ALL_IN_ONE.ui32MsgLen = MSG_DATA_LENGTH;
     ALL_IN_ONE.pucMsgData = DATA_ALL_IN_ONE;
 }
@@ -115,7 +115,7 @@ void can_load_mailbox(tCANMsgObject* load_mailbox)
     //
     // Load Transmit Message
     //
-    load_mailbox->ui32Flags |= MSG_OBJ_EXTENDED_ID;
+    load_mailbox->ui32Flags = 0;
     load_mailbox->ui32MsgLen = MSG_DATA_LENGTH;
     load_mailbox->ui32MsgIDMask = 0;
     CANMessageSet(CAN_BASE, TX_MSG_OBJ_ID, load_mailbox,
@@ -125,7 +125,7 @@ void can_load_mailbox(tCANMsgObject* load_mailbox)
 
 void can_receive_mailbox(tCANMsgObject* load_mailbox)
 {
-    load_mailbox->ui32Flags |= MSG_OBJ_EXTENDED_ID;
+    load_mailbox->ui32Flags = 0;
     load_mailbox->ui32MsgLen = MSG_DATA_LENGTH;
     load_mailbox->ui32MsgIDMask = 0;
     CANMessageSet(CAN_BASE, RX_MSG_OBJ_ID, load_mailbox,
@@ -267,9 +267,9 @@ void PackAndSendCellDetails()
     Tcmax = (0x3FFF) & (temp_array[GetMin(temp_array, 4*MAX_DEVICES)]);
     Tcmin = (0x3FFF) & (temp_array[GetMax(temp_array, 4*MAX_DEVICES)]);
 
-    Soc = (unsigned char)((get_current_soc()*256)/100);
+    Soc = (unsigned char)((get_current_soc()/100.00)*255);
     Current = GetNowCurrent();
-    AmbientTemp = 0x00;
+    AmbientTemp = Now_amb_temp();
 
     DATA_ALL_IN_ONE[0] = Soc;
     DATA_ALL_IN_ONE[1] = 0xFF & Current;            //lower byte

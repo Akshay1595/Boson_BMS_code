@@ -29,7 +29,7 @@ void main(void)
     while(1) {
              COMMLEDToggle();
              GetISLData(NumISLDevices);
-             DELAY_S(1);
+             DELAY_MS(INTERVAL);
 #ifndef PARTIAL_LOG
              log_data();
 #else

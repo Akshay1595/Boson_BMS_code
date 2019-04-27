@@ -590,19 +590,22 @@ void partial_log()
         somevalue = ISLData->PAGE2_1.FAULT.OVTF.all;somevalue = (somevalue>>1) & 0x000F;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
         somevalue = ISLData->PAGE2_1.FAULT.UF.all;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
         somevalue = ISLData->PAGE2_1.FAULT.OF.all;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
-        somevalue = ISLData->PAGE2_1.FAULT.OC.all;my_itoa(somevalue, buf);uart_string(buf);
+        somevalue = ISLData->PAGE2_1.FAULT.OC.all;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
 
-        if(i == NumISLDevices-1)
+        if(i == NumISLDevices-1){
+            float_to_ascii(get_ambient_temperature(), buf);
+            uart_string(buf);
+            uart_xmit(',');
+            float_to_ascii(get_current_soc(), buf);
+            uart_string(buf);
             uart_string("\r\n");
+        }
         else
-            uart_xmit(', ,');
+            uart_xmit(',');
     }
 #endif
 }
-void read_ambient_temp(void)
-{
 
-}
 void COMMLEDSetup()
 {
     EALLOW;

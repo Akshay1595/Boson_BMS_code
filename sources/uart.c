@@ -124,8 +124,14 @@ void uart_receive_buffer(Uint8 *buf)
 /*
  *  Description: myitoa implementation
  */
-void my_itoa(Uint16 a,Uint8* buf)
+void my_itoa(int16 a,Uint8* buf)
 {
+    if (a < 0)
+    {
+        buf[0] = '-';
+        buf++;
+        a = a * -1;
+    }
     int index = 0;
     if(a == 0)
     {
@@ -153,6 +159,12 @@ void reverse(Uint8 *str, int len)
 }
 void float_to_ascii(double number,Uint8 *buf)
 {
+    if (number < 1)
+    {
+        buf[0] = '-';
+        buf++;
+        number = number * -1;
+    }
     Uint16 i_num = number;
     my_itoa(i_num,buf);
     strcat(buf,".");
