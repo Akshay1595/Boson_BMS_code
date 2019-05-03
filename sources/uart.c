@@ -42,9 +42,11 @@ void uart_init()
     // SCIA at 9600 baud
     // @LSPCLK = 50 MHz (200 MHz SYSCLK) HBAUD = 0x02 and LBAUD = 0x8B.
     // @LSPCLK = 30 MHz (120 MHz SYSCLK) HBAUD = 0x01 and LBAUD = 0x86.
-    //
-    SciaRegs.SCIHBAUD.all = 0x0000;
-    SciaRegs.SCILBAUD.all = 0x0036;
+
+    // SCIA at 115200 baud
+    //@LSPCLK = 50 MHz (200 MHz SYSCLK) HBAUD = 0x02 and LBAUD = 0x36.
+    SciaRegs.SCIHBAUD.all = 0x0002;
+    SciaRegs.SCILBAUD.all = 0x008B;
 
     SciaRegs.SCICTL1.all = 0x0023;  // Relinquish SCI from Reset
 
@@ -159,7 +161,7 @@ void reverse(Uint8 *str, int len)
 }
 void float_to_ascii(double number,Uint8 *buf)
 {
-    if (number < 1)
+    if (number < 0)
     {
         buf[0] = '-';
         buf++;

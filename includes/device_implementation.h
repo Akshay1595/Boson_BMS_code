@@ -10,7 +10,7 @@
 #ifndef DEVICE_IMPLEMENTATION_H_
 #define DEVICE_IMPLEMENTATION_H_
 
-#define CONTACTOR_PIN 31
+#define CONTACTOR_PIN 25
 
 #include "F28x_project.h"
 #include "ISL94212.h"

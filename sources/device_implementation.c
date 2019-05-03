@@ -335,13 +335,13 @@ float get_current_soc(void)
         48.28517327, 0.6069323966
     };
     //do nothing
-    int8 i = 76;
+    int8 i = 0;
     float input_value = get_battery_voltage();
 
     //if voltage is more than max available in truth table then SOC will be obviously 100%
     if(input_value > soc_table[i][0])
         return 100.00;
-    else if(input_value < soc_table[0][0])
+    else if(input_value < soc_table[76][0])
         return 0.00;
 
     for(i=76;i>0;i--)

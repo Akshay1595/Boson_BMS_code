@@ -242,6 +242,11 @@ Uint16 GetCellsInBalance(void){
 #pragma CODE_SECTION(Setup,".bigCode")
 void Setup() {
 
+
+#ifdef _FLASH
+    memcpy(&RamfuncsRunStart, &RamfuncsLoadStart, (size_t)&RamfuncsLoadSize);
+#endif
+
     DisableISR();
 
     // Initialize System Control:

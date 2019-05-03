@@ -11,11 +11,13 @@
 #define FAULT_LED 32
 
 //fault coding
-#define FAULT_UV      0x01
-#define FAULT_OV      0x02
-#define FAULT_OVTF    0x03
-#define FAULT_OW      0x04
-#define FAULT_OC      0x05
+#define Fault_UV            0x00
+#define Fault_OV            0x01
+#define Fault_OpenWire      0x02
+#define Fault_OverTemp      0x03
+#define Fault_OverCurrent   0x04
+#define Fault_UnderTemp     0x05
+#define Fault_Low_SOC       0x06
 
 void fault_isr(void);
 void FaultLEDOn(void);
