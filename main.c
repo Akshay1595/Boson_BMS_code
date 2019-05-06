@@ -25,16 +25,11 @@
 //
 void main(void)
 {
-    Uint8 buf[16];
-    double Vbat;
-    float soc;
     Setup();
     while(1) {
              COMMLEDToggle();
              GetISLData(NumISLDevices);
              DELAY_MS(INTERVAL);
-             Vbat = get_battery_voltage();float_to_ascii(Vbat, buf);uart_string(buf);uart_xmit(',');
-             soc = get_current_soc();float_to_ascii(soc, buf);uart_string(buf);uart_string("\r\n");
 #ifndef PARTIAL_LOG
              log_data();
 #else

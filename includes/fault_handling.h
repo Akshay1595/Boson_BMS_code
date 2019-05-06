@@ -31,5 +31,6 @@ SummaryFaults* CheckFaults(Uint8 device);
 void recover_from_faults(void);
 extern Uint16 NowCurrent;
 extern Uint16 OverCurrentThreshold;
-
+Uint16 get_current_value(Uint8 FaultCode,Uint8 device,Uint8 cell_no);
+void fill_can_message(Uint8 FaultCode,Uint8 device,Uint8 cell_no);
 #endif /* INCLUDES_FAULT_HANDLING_H_ */

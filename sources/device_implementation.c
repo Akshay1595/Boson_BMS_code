@@ -168,66 +168,7 @@ double get_battery_voltage(void)
     }
     return f_voltage;
 }
-void balance_on(Uint8 device,Uint8 cell_no)
-{
-    if((device > NumISLDevices) && (cell_no > MAX_CELL_NUMBER))
-    {
-        //error
-        return;
-    }
-    Uint8 BalanceChip[2];
-    Uint16 Current_Balance_State = 0;
-    ISL_DEVICE *ISLData;
-    ISLData = GetISLDevices(device);
-    Current_Balance_State =(*ISLData).PAGE2_2.SETUP.BSTAT.all;
-    Current_Balance_State |= (1 << (cell_no-1));
 
-    BalanceChip[0]=((Current_Balance_State>>8) & 0xFF);
-    BalanceChip[1]=((Current_Balance_State) & 0x00FF);     //Bit Shift them to the right locations Chip 1 is 0-9
-    //ISL_COMMAND deivce number is (2*Module)-1 for one and no minus 1 for the second
-    ISL_Command(device+1,2,0x14,1,BalanceChip,2, 0);
-
-}
-void balance_off(Uint8 device,Uint8 cell_no)
-{
-    if((device > NumISLDevices) && (cell_no > MAX_CELL_NUMBER))
-     {
-         //error
-         return;
-     }
-     Uint8 BalanceChip[2];
-     Uint16 Current_Balance_State = 0;
-     ISL_DEVICE *ISLData;
-     ISLData = GetISLDevices(device);
-     Current_Balance_State =(*ISLData).PAGE2_2.SETUP.BSTAT.all;
-     Current_Balance_State &= ~(1 << (cell_no-1));
-
-     BalanceChip[0]=((Current_Balance_State>>8) & 0xFF);
-     BalanceChip[1]=((Current_Balance_State) & 0x00FF);     //Bit Shift them to the right locations Chip 1 is 0-9
-     //ISL_COMMAND deivce number is (2*Module)-1 for one and no minus 1 for the second
-     ISL_Command(device+1,2,0x14,1,BalanceChip,2, 0);
-
-}
-void balance_all(Uint8 device,Uint16 all_data)
-{
-    if((device > NumISLDevices) && (all_data >= (1<<13)) )
-     {
-         //error
-         return;
-     }
-
-    Uint8 BalanceChip[2];
-    Uint16 Current_Balance_State = 0;
-    ISL_DEVICE *ISLData;
-    ISLData = GetISLDevices(device);
-    Current_Balance_State =(*ISLData).PAGE2_2.SETUP.BSTAT.all;
-    Current_Balance_State = (all_data & 0x0FFF);
-
-    BalanceChip[0]=((Current_Balance_State>>8) & 0xFF);
-    BalanceChip[1]=((Current_Balance_State) & 0x00FF);     //Bit Shift them to the right locations Chip 1 is 0-9
-    //ISL_COMMAND deivce number is (2*Module)-1 for one and no minus 1 for the second
-    ISL_Command(device+1,2,0x14,1,BalanceChip,2, 0);
-}
 void contactor_on(void)
 {
 #ifdef DEBUG
@@ -252,6 +193,7 @@ void contactor_gpio_setup()
 }
 
 //calculation of SOC based on lookup table
+#pragma CODE_SECTION(get_current_soc,".bigCode")
 float get_current_soc(void)
 {
 
@@ -360,7 +302,6 @@ float get_current_soc(void)
                 return soc_table[i+1][1];
                 //printf("SOC = %f\n",soc_table[i+1][1]);
             }
-            break;
         }
     }
     return 0;

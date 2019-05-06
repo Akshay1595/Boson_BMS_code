@@ -21,6 +21,8 @@ volatile ISL_FLAGS *currentFlags;
 tCANMsgObject FaultMessage;
 Uint8 Fault_data[8] = {};
 extern Uint16 OverCurrentThreshold;
+extern Uint8 temp_lookup_table[8][2];
+
 
 void fault_isr(void)
 {
@@ -98,40 +100,39 @@ Bool checkForFault(void)
 
 void alert_ecu()
 {
-    Uint8 CurrentDevice,cell_no;
-    Uint16 CurrentCellVoltage = 0x00;
-    ISL_DEVICE * ISL_Data;
+    ISL_DEVICE *ISL_Struct;
+    Uint8 CurrentDevice = 0,cell_no=0,FaultCode=0,i;
     for(CurrentDevice=0;CurrentDevice<NumISLDevices;CurrentDevice++)
     {
         if (AllFaults[CurrentDevice].IsFault == True)
         {
-            Fault_data[0] |= (CurrentDevice & 0x0F);
-        #ifdef DEBUG
-            Uint8 buf[3]={};
-            uart_string("Device : ");
-            my_itoa(CurrentDevice, buf);
-            uart_string(buf);
-            uart_string("\tFaults seen :");
-            Fault_data[1] = CurrentDevice & 0x0F;                       //assign a device number for fault message
             if(AllFaults[CurrentDevice].UnderVoltage == True){
-                uart_string("\tUV=1");Fault_data[0] = Fault_UV;}
+                FaultCode = Fault_UV;ISL_Struct = GetISLDevices(CurrentDevice);
+                for(i=0;i<12;i++){if(ISL_Struct->PAGE2_1.FAULT.UF.all & (1 << i)){cell_no = i+1;break;}}
+            }
             if(AllFaults[CurrentDevice].OverVoltage == True){
-                uart_string("\tOV=1");Fault_data[0] = Fault_OV;}
+                FaultCode = Fault_OV;ISL_Struct = GetISLDevices(CurrentDevice);
+                for(i=0;i<12;i++){if(ISL_Struct->PAGE2_1.FAULT.OF.all & (1 << i)){cell_no = i+1;break;}}
+            }
             if(AllFaults[CurrentDevice].OverTemp == True){
-                uart_string("\tOVTF=1");Fault_data[0] = Fault_OverTemp;}
+                FaultCode = Fault_OverTemp;ISL_Struct = GetISLDevices(CurrentDevice);
+                for(i=0;i<5;i++){if(ISL_Struct->PAGE2_1.FAULT.OVTF.all & (1 << i)){cell_no = i+1;break;}}
+            }
             if(AllFaults[CurrentDevice].OverCurrent == True){
-                uart_string("\tOC=1");Fault_data[0] = Fault_OverCurrent;}
+                FaultCode = Fault_OverCurrent;cell_no = 0;
+            }
             if(AllFaults[CurrentDevice].OpenWire == True){
-                uart_string("\tOW=1");Fault_data[0] = Fault_OpenWire;}
-            uart_string("\r\n");
-        #endif
+                FaultCode = Fault_OpenWire;ISL_Struct = GetISLDevices(CurrentDevice);
+                for(i=0;i<12;i++){if(ISL_Struct->PAGE2_1.FAULT.OC.all & (1 << i)){cell_no = i+1;break;}}
+            }
+            fill_can_message(FaultCode, CurrentDevice, cell_no);
             can_load_mailbox(&FaultMessage);
         }
     }
 
 }
 
-#pragma CODE_SECTION(InitializeISLParameters,".bigCode")
+#pragma CODE_SECTION(handle_fault,".bigCode")
 void handle_fault(void)
 {
 
@@ -188,12 +189,11 @@ void recover_from_faults(void)
         while(AllFaults[CurrentDevice].IsFault == True)
         {
             clear_all_fault();
-            //GetISLData(NumISLDevices);
             DELAY_S(2);
             ISL_Request(CurrentDevice+1, READ_FAULTS);
             DELAY_S(3);
-            //partial_log();
-            CheckFaults(CurrentDevice);                                     //check for fault again
+            CheckFaults(CurrentDevice);
+            alert_ecu();
         }
     }
 }
@@ -215,74 +215,87 @@ void clear_all_fault(void)
         ISL_WriteRegister(device,2,0x04,Reset);                                                      //reset all the pages one by one
 }
 
-Uint16 get_underVoltageThreshold16bit(void)
+#pragma CODE_SECTION(get_threshold_value,".bigCode")
+Uint16 get_threshold_value(Uint8 fault_code)
 {
-    return (Uint16)(((1<<13)/5)*UV_LIMIT);                                            //Set Lower Limit to 1.05
+    Uint16 Value;
+    switch(fault_code)
+    {
+        case Fault_UV :
+            return (Uint16)(((1<<13)/5)*UV_LIMIT);                                            //Set Lower Limit to 1.05
+
+        case Fault_OV :
+            return (Uint16)(((1<<13)/5)*OV_LIMIT);
+
+        case Fault_OverTemp :
+            Value = temp_lookup_table[(OT_LIMIT/5)-5][0];
+            Value |= (temp_lookup_table[(OT_LIMIT/5)-5][1]) << 8;
+            return Value;
+
+        case Fault_OverCurrent :
+            return OverCurrentThreshold;
+
+        default:
+            return 0xFFFF;
+    }
 }
-Uint16 get_overVoltageThreshold16bit(void)
-{
-    return (Uint16)(((1<<13)/5)*OV_LIMIT);
-}
-Uint16 get_OverTempThreshold16bit(void)
-{
-    //extern Uint8 *temp_lookup_table;
-    //Uint16 Value16bit = temp_lookup_table[(OT_LIMIT/5)-5][0];
-    //Value16bit |= (temp_lookup_table[(OT_LIMIT/5)-5][1] << 8);
-    Uint16 Value16bit;
-    return Value16bit;
-}
-Uint16 get_OverCurrentThreshold16bit(void)
-{
-    return OverCurrentThreshold;
-}
-/*
-Uint16 getCurrentValue(Uint8 FaultCode,Uint8 device,Uint8 cell_no)
+
+#pragma CODE_SECTION(get_current_value,".bigCode")
+Uint16 get_current_value(Uint8 FaultCode,Uint8 device,Uint8 cell_no)
 {
     Uint16 currentValue;
     Uint8 buf[16]={};
     switch(FaultCode)
     {
-    //fault UV
+        //fault UV
         case Fault_UV:
             ISL_ReadRegister(device, 0x01, cell_no);
-            DELAY_US(10);
-            currentValue = read_voltage(device, cell_no);
+            DELAY_MS(1);
+
 #ifdef DEBUG
-            uart_string("UnderVoltage in device = ");my_itoa(device, buf);uart_string(buf);
-            uart_string(" Cell Number = ");my_itoa(cell_no, buf);
-            uart_string(" Current Voltage Value = ");
+            uart_string("UV Dev= ");my_itoa(device, buf);uart_string(buf);
+            uart_string(" Cell_no= ");my_itoa(cell_no, buf);uart_string(buf);
+            uart_string(" Vltg now= ");
+#endif
+            currentValue = read_voltage(device, cell_no);
             double FloatValue = get_float_value_for_voltage(currentValue, cell);float_to_ascii(FloatValue, buf);
+#ifdef DEBUG
             uart_string(buf);uart_string("\r\n");
 #endif
             return currentValue;
-     //fault_OV
+
+        //fault_OV
         case Fault_OV:
             ISL_ReadRegister(device, 0x01, cell_no);
-            DELAY_US(10);
+            DELAY_MS(1);
             currentValue = read_voltage(device, cell_no);
 #ifdef DEBUG
-            uart_string("OverVoltage in device = ");my_itoa(device, buf);uart_string(buf);
-            uart_string(" Cell Number = ");my_itoa(cell_no, buf);
-            uart_string(" Current Voltage Value = ");
+            uart_string("OV Dev= ");my_itoa(device, buf);uart_string(buf);
+            uart_string(" Cell_no= ");my_itoa(cell_no, buf);uart_string(buf);
+            uart_string(" Vltg now= ");
             FloatValue = get_float_value_for_voltage(currentValue, cell);
             float_to_ascii(FloatValue, buf);
             uart_string(buf);uart_string("\r\n");
 #endif
             return currentValue;
-      //Fault_OverCurrent
+
+        //Fault_OverCurrent
         case Fault_OverCurrent:
             currentValue = GetNowCurrent();
+            uart_string("OverCurrent");float_to_ascii((currentValue/4195.00), buf);uart_string(" I now=");
+            uart_string_newline(buf);uart_string("A\r\n");
             return NowCurrent;
-      //Fault OpenWire
+
+        //Fault OpenWire
         case Fault_OpenWire:
             ISL_ReadRegister(device, 3, 2);
-            DELAY_US(10);
-            ISL_DEVICE * ISL_Data;
+            DELAY_MS(1);
+#ifdef DEBUG
+            uart_string("OW Dev=");my_itoa(device, buf);uart_string(buf);uart_string(" Reg Val now= ");
+#endif
+            ISL_DEVICE * ISL_Data = GetISLDevices(device);
             currentValue = ISL_Data->PAGE2_1.FAULT.OC.all;
 #ifdef DEBUG
-            uart_string("Open Wire in device = ");my_itoa(device, buf);uart_string(buf);
-            uart_string(" Cell Number = ");my_itoa(cell_no, buf);
-            uart_string(" Open Wire Resister Value = ");
             my_itoa(currentValue, buf);uart_string(buf);uart_string("\r\n");
 #endif
             return currentValue;
@@ -292,35 +305,35 @@ Uint16 getCurrentValue(Uint8 FaultCode,Uint8 device,Uint8 cell_no)
             if(cell_no == 1)
             {
                 ISL_ReadRegister(device, 0x01, 0x11);
-                DELAY_US(10);
+                DELAY_MS(1);
                 ISL_DEVICE * ISL_Data = GetISLDevices(device);
                 currentValue = ISL_Data->PAGE1.TEMP.ET1V;
             }
             else if(cell_no == 2)
             {
                 ISL_ReadRegister(device, 0x01, 0x12);
-                DELAY_US(10);
+                DELAY_MS(1);
                 ISL_DEVICE * ISL_Data = GetISLDevices(device);
                 currentValue = ISL_Data->PAGE1.TEMP.ET2V;
             }
             if(cell_no == 3)
             {
                 ISL_ReadRegister(device, 0x01, 0x13);
-                DELAY_US(10);
+                DELAY_MS(1);
                 ISL_DEVICE * ISL_Data = GetISLDevices(device);
                 currentValue = ISL_Data->PAGE1.TEMP.ET3V;
             }
             if(cell_no == 4)
             {
                 ISL_ReadRegister(device, 0x01, 0x14);
-                DELAY_US(10);
+                DELAY_MS(1);
                 ISL_DEVICE * ISL_Data = GetISLDevices(device);
                 currentValue =  ISL_Data->PAGE1.TEMP.ET4V;
             }
 #ifdef DEBUG
-            uart_string("OverTemperature in device = ");my_itoa(device, buf);uart_string(buf);
-            uart_string(" TempSensor Number = ");my_itoa(cell_no, buf);
-            uart_string(" Current Temp Value = ");
+            uart_string("OvTemp dev= ");my_itoa(device, buf);uart_string(buf);
+            uart_string(" Sens_No= ");my_itoa(cell_no, buf);uart_string(buf);
+            uart_string(" Temp_now = ");
             double temperature = read_temp(device,cell_no);float_to_ascii(temperature, buf);
             uart_string(buf);uart_string("degreeC\r\n");
 #endif
@@ -329,13 +342,35 @@ Uint16 getCurrentValue(Uint8 FaultCode,Uint8 device,Uint8 cell_no)
         //LowerSOC
         case Fault_Low_SOC:
 #ifdef DEBUG
-            uart_string("Lower SOC");float_to_ascii(get_current_soc(), buf);
-            uart_string(" Current Value = ");uart_string(buf);uart_string(" %\r\n");
+            uart_string("LowSOC");float_to_ascii(get_current_soc(), buf);
+            uart_string(" SOCnow= ");uart_string(buf);uart_string("%\r\n");
 #endif
-            return  (get_current_soc()/100.00) * 65535;
+            return  ((Uint16)(get_current_soc()/100.00) * 65535);
 
+        //defaultValue
         default:
             return currentValue;
     }
 }
-*/
+void fill_can_message(Uint8 FaultCode,Uint8 device,Uint8 cell_no)
+{
+    Uint16 Value;
+
+    //step1: fill the fault code here
+    Fault_data[0] = FaultCode;
+
+    //step2: fill device and cell_no
+    Fault_data[1] = ((cell_no & 0x0f) << 4) | (device & 0x0f);
+
+    //step3: fill the current value
+
+    Value = get_current_value(FaultCode,device,cell_no);
+
+    Fault_data[2] = 0xFF & Value;
+    Fault_data[3] = 0xFF & ( Value >> 8);
+
+    //step4: Fill threshold value
+    Value = get_threshold_value(FaultCode);
+    Fault_data[4] = (Value) & 0xFF;
+    Fault_data[5] = (Value >> 8) & 0xFF;
+}
