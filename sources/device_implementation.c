@@ -527,11 +527,6 @@ void partial_log()
         F_value = read_temp(i, (GetMax(Temp_array, 4)+1));float_to_ascii(F_value, buf);uart_string(buf);uart_xmit(',');
         F_value = read_temp(i, (GetMin(Temp_array, 4)+1));float_to_ascii(F_value, buf);uart_string(buf);uart_xmit(',');
 
-        Uint16 somevalue;
-        somevalue = ISLData->PAGE2_1.FAULT.OVTF.all;somevalue = (somevalue>>1) & 0x000F;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
-        somevalue = ISLData->PAGE2_1.FAULT.UF.all;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
-        somevalue = ISLData->PAGE2_1.FAULT.OF.all;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
-        somevalue = ISLData->PAGE2_1.FAULT.OC.all;my_itoa(somevalue, buf);uart_string(buf);uart_xmit(',');
 
         if(i == NumISLDevices-1){
             float_to_ascii(get_ambient_temperature(), buf);

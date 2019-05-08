@@ -359,8 +359,8 @@ void Setup() {
 
 #ifdef DEBUG
     #ifdef PARTIAL_LOG
-    uart_string(",,,,Device1,,,,,,,,,Device2,,,,,,,,,Device3,,,,,,,,,Device4,,,,,,\r\n");
-    uart_string("Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW,Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW,Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW,Vcmin,Vcmax,Vpack,Tmin,Tmax,OT,UV,OV,OW,AmbientTemp,SOC\r\n");
+    uart_string(",,Device1,,,,,,Device2,,,,,,Device3,,,,,,Device4,,,,,\r\n");
+    uart_string("Vcmax,Vcmin,Vpack,Tcmin,Tcmax,,Vcmax,Vcmin,Vpack,Tcmin,Tcmax,,Vcmax,Vcmin,Vpack,Tcmin,Tcmax,,Vcmax,Vcmin,Vpack,Tcmin,Tcmax,AmbTemp,SOC\r\n");
     #endif
 #endif
 }
