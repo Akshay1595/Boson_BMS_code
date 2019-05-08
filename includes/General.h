@@ -121,5 +121,7 @@ void InitializeAllParameters(void);
 Parameters* GetParameters(void);
 Bool MakeABool(Uint8 ToBeMade);
 void Setup(void);
+void checkForCommFailure(void);
+void handle_comm_failure(void);
 
 #endif /* GENERAL_H_ */

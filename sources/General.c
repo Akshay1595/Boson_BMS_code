@@ -13,6 +13,7 @@
 //
 // Globals
 //
+extern Uint8 FailCounter;
 Uint8 NumISLDevices=0x00;
 Uint8 GNR_ISRDepth=0;
 Uint8 BalanceEnable[2];
@@ -153,6 +154,7 @@ Parameters* GetParameters(void){
 void GetISLData(Uint8 NumDevices){
 	Uint8 i;
 	//NumCellsBalancing=GetCellsInBalanceOut();
+	checkForCommFailure();                                                                      //check if communication failure is there
 	if(CPQ_Empty()==True){																		// Every loop check to see if the queue is empty
 		if(*NumCellsBalancing>0){
 		DELAY_MS(AllParameters.Balance.BleedResistorDelay);
@@ -168,7 +170,6 @@ void GetISLData(Uint8 NumDevices){
 
 		}
 	}
-
 }
 
 #pragma CODE_SECTION(GetMin,".bigCode")
@@ -241,8 +242,6 @@ Uint16 GetCellsInBalance(void){
 
 #pragma CODE_SECTION(Setup,".bigCode")
 void Setup() {
-
-
 #ifdef _FLASH
     memcpy(&RamfuncsRunStart, &RamfuncsLoadStart, (size_t)&RamfuncsLoadSize);
 #endif
@@ -366,4 +365,60 @@ void Setup() {
 #endif
 }
 
+//
+//This function checks if communication failure is there and if there it calls handle for it
+//
+void checkForCommFailure(void)
+{
+    ISL_FLAGS* RecieveFlags;
+    RecieveFlags=GetISLFlags();
+    if( RecieveFlags->timeout == True || (RecieveFlags->newAck == False && RecieveFlags->newData == False ))
+    {
+        // If we do not get any data out of ISL devices raise a bug and say that it has failed.. Let him reconnect
+        FailCounter++;
+    }
+    if ( FailCounter > 4 )
+    {
+        handle_comm_failure();
+    }
+}
 
+//
+// This code is to handle the Communication failure
+//
+void handle_comm_failure(void)
+{
+    //keeping fault counter = 0 to restart
+    FailCounter = 0;
+    //disable recv_call back first since there is no need to send continuous CAN message now
+    CPQ_Flush();
+    ISL_DisableReceiveCallback();
+    FaultLEDOn();
+#ifdef DEBUG
+    uart_string("Communication has failed\r\n");
+    uart_string("Retrying...\r\n");
+#endif
+    while(ISL_Init_Retry(2) == False);
+#ifdef DEBUG
+    uart_string("Communication restored......!\r\n");
+#endif
+    NumISLDevices=NumDevices();
+    clear_all_fault();clear_all_fault();//try to clear all faults
+    InitializeISLParameters(NumISLDevices);
+#ifdef DEBUG
+    Uint8 _buf[8]={};
+    uart_string("There are ");
+    my_itoa(NumISLDevices, _buf);
+    uart_string(_buf);
+    uart_string(" devices!\r\n");
+#endif
+    fault_isr();
+    ISL_ResetFlags();
+    GetISLData(NumISLDevices);
+    //DELAY_S(1);
+    ISL_EnableReceiveCallback();
+    ISL_SetReceiveCallback(RecieveHandler);                 // Set the call back to the recieve handler
+    FaultLEDOff();
+    //System restored, now try sending can messages again
+
+}

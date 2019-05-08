@@ -44,9 +44,9 @@ void uart_init()
     // @LSPCLK = 30 MHz (120 MHz SYSCLK) HBAUD = 0x01 and LBAUD = 0x86.
 
     // SCIA at 115200 baud
-    //@LSPCLK = 50 MHz (200 MHz SYSCLK) HBAUD = 0x02 and LBAUD = 0x36.
-    SciaRegs.SCIHBAUD.all = 0x0002;
-    SciaRegs.SCILBAUD.all = 0x008B;
+    //@LSPCLK = 50 MHz (200 MHz SYSCLK) HBAUD = 0x00 and LBAUD = 0x36.
+    SciaRegs.SCIHBAUD.all = 0x0000;
+    SciaRegs.SCILBAUD.all = 0x0036;
 
     SciaRegs.SCICTL1.all = 0x0023;  // Relinquish SCI from Reset
 

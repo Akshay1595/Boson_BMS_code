@@ -152,8 +152,9 @@ void RecieveHandler() {
         if(Header==BALANCE_STATUS){
         }
     }
-    if(Header==NAK || Header==COMMS_FAILURE){
-        FailCounter++;                                                                          // If we got a NAK then lets increase the fail counter
+    if(RecieveFlags->newAck == False && RecieveFlags->newData == False && RecieveFlags->timeout == True){
+        // If we do not get any data out of ISL devices raise a bug and say that it has failed.. Let him reconnect
+        FailCounter++;
     }
     else{
         FailCounter=0;                                                                          // We only care about sequential NAK's so reset if it was just a one off

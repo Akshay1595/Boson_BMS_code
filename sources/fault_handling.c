@@ -135,7 +135,9 @@ void alert_ecu()
 #pragma CODE_SECTION(handle_fault,".bigCode")
 void handle_fault(void)
 {
-
+    // initially check for communication failure
+    checkForCommFailure();
+    //turn On the LED
     FaultLEDOn();
     //disable receive callback so that this callback doesn't hinder normal fault handling
     ISL_DisableReceiveCallback();
@@ -188,6 +190,7 @@ void recover_from_faults(void)
         CheckFaults(CurrentDevice);
         while(AllFaults[CurrentDevice].IsFault == True)
         {
+            checkForCommFailure();                              //please check always if communication failure is there
             clear_all_fault();
             DELAY_S(2);
             ISL_Request(CurrentDevice+1, READ_FAULTS);
@@ -243,7 +246,8 @@ Uint16 get_threshold_value(Uint8 fault_code)
 #pragma CODE_SECTION(get_current_value,".bigCode")
 Uint16 get_current_value(Uint8 FaultCode,Uint8 device,Uint8 cell_no)
 {
-    Uint16 currentValue;
+    Uint16 currentValue=0x00;
+    double FloatValue = 0.00;
     Uint8 buf[16]={};
     switch(FaultCode)
     {
@@ -258,7 +262,7 @@ Uint16 get_current_value(Uint8 FaultCode,Uint8 device,Uint8 cell_no)
             uart_string(" Vltg now= ");
 #endif
             currentValue = read_voltage(device, cell_no);
-            double FloatValue = get_float_value_for_voltage(currentValue, cell);float_to_ascii(FloatValue, buf);
+            FloatValue = get_float_value_for_voltage(currentValue, cell);float_to_ascii(FloatValue, buf);
 #ifdef DEBUG
             uart_string(buf);uart_string("\r\n");
 #endif

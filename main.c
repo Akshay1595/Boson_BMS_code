@@ -23,6 +23,7 @@
 //
 // Main
 //
+extern Uint8 FailCounter;
 void main(void)
 {
     Setup();
