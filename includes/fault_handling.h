@@ -18,6 +18,7 @@
 #define Fault_OverCurrent   0x04
 #define Fault_UnderTemp     0x05
 #define Fault_Low_SOC       0x06
+#define Warning_Full_SOC    0x07
 
 void fault_isr(void);
 void FaultLEDOn(void);
@@ -33,4 +34,5 @@ extern Uint16 NowCurrent;
 extern Uint16 OverCurrentThreshold;
 Uint16 get_current_value(Uint8 FaultCode,Uint8 device,Uint8 cell_no);
 void fill_can_message(Uint8 FaultCode,Uint8 device,Uint8 cell_no);
+Uint16 get_threshold_value(Uint8 fault_code);
 #endif /* INCLUDES_FAULT_HANDLING_H_ */

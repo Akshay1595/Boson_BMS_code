@@ -4,7 +4,7 @@
 
 SHELL = cmd.exe
 
-CG_TOOL_ROOT := C:/ti/ccsv8/tools/compiler/ti-cgt-c2000_18.1.3.LTS
+CG_TOOL_ROOT := C:/ti/ccsv8/tools/compiler/ti-cgt_c2000_18.1.3.LTS
 
 GEN_OPTS__FLAG := 
 GEN_CMDS__FLAG := 
@@ -29,6 +29,7 @@ ORDERED_OBJS += \
 "./sources/Queue.obj" \
 "./sources/Timer.obj" \
 "./sources/adc.obj" \
+"./sources/check_for_alerts.obj" \
 "./sources/device_implementation.obj" \
 "./sources/fault_handling.obj" \
 "./sources/my_can.obj" \
@@ -166,22 +167,22 @@ all: can_external_transmit_cpu01.out
 can_external_transmit_cpu01.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: C2000 Linker'
-	"C:/ti/ccsv8/tools/compiler/ti-cgt-c2000_18.1.3.LTS/bin/cl2000" -v28 -ml -mt --cla_support=cla1 --float_support=fpu32 --tmu_support=tmu0 --vcu_support=vcu2 --define=CPU1 --define=_FLASH -z --stack_size=0x200 --warn_sections -i"C:/ti/ccsv8/tools/compiler/ti-cgt-c2000_18.1.3.LTS/lib" -i"C:/ti/ccsv8/tools/compiler/ti-cgt-c2000_18.1.3.LTS/include" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/F2837xD_common/cmd" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/F2837xD_headers/cmd" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/common/cmd" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/headers/cmd" --reread_libs --rom_model -o "can_external_transmit_cpu01.out" $(ORDERED_OBJS)
+	"C:/ti/ccsv8/tools/compiler/ti-cgt_c2000_18.1.3.LTS/bin/cl2000" -v28 -ml -mt --cla_support=cla1 --float_support=fpu32 --tmu_support=tmu0 --vcu_support=vcu2 --define=CPU1 --define=_FLASH -z --stack_size=0x200 --warn_sections -i"C:/ti/ccsv8/tools/compiler/ti-cgt_c2000_18.1.3.LTS/lib" -i"C:/ti/ccsv8/tools/compiler/ti-cgt_c2000_18.1.3.LTS/include" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/F2837xD_common/cmd" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/F2837xD_headers/cmd" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/common/cmd" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/headers/cmd" --reread_libs --rom_model -o "can_external_transmit_cpu01.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
 can_external_transmit_cpu01.hex: $(EXE_OUTPUTS)
 	@echo 'Building files: $(strip $(EXE_OUTPUTS__QUOTED))'
 	@echo 'Invoking: C2000 Hex Utility'
-	"C:/ti/ccsv8/tools/compiler/ti-cgt-c2000_18.1.3.LTS/bin/hex2000"  -o "can_external_transmit_cpu01.hex" $(EXE_OUTPUTS__QUOTED)
+	"C:/ti/ccsv8/tools/compiler/ti-cgt_c2000_18.1.3.LTS/bin/hex2000"  -o "can_external_transmit_cpu01.hex" $(EXE_OUTPUTS__QUOTED)
 	@echo 'Finished building: $(strip $(EXE_OUTPUTS__QUOTED))'
 	@echo ' '
 
 # Other Targets
 clean:
 	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
-	-$(RM) "F2837xD_Adc.obj" "F2837xD_CodeStartBranch.obj" "F2837xD_DefaultISR.obj" "F2837xD_GlobalVariableDefs.obj" "F2837xD_Gpio.obj" "F2837xD_Ipc.obj" "F2837xD_PieCtrl.obj" "F2837xD_PieVect.obj" "F2837xD_SysCtrl.obj" "F2837xD_usDelay.obj" "can.obj" "interrupt.obj" "main.obj" "sources\CommandPriorityQueue.obj" "sources\General.obj" "sources\ISL94212.obj" "sources\Queue.obj" "sources\Timer.obj" "sources\adc.obj" "sources\device_implementation.obj" "sources\fault_handling.obj" "sources\my_can.obj" "sources\spi.obj" "sources\uart.obj" 
-	-$(RM) "F2837xD_Adc.d" "F2837xD_DefaultISR.d" "F2837xD_GlobalVariableDefs.d" "F2837xD_Gpio.d" "F2837xD_Ipc.d" "F2837xD_PieCtrl.d" "F2837xD_PieVect.d" "F2837xD_SysCtrl.d" "can.d" "interrupt.d" "main.d" "sources\CommandPriorityQueue.d" "sources\General.d" "sources\ISL94212.d" "sources\Queue.d" "sources\Timer.d" "sources\adc.d" "sources\device_implementation.d" "sources\fault_handling.d" "sources\my_can.d" "sources\spi.d" "sources\uart.d" 
+	-$(RM) "F2837xD_Adc.obj" "F2837xD_CodeStartBranch.obj" "F2837xD_DefaultISR.obj" "F2837xD_GlobalVariableDefs.obj" "F2837xD_Gpio.obj" "F2837xD_Ipc.obj" "F2837xD_PieCtrl.obj" "F2837xD_PieVect.obj" "F2837xD_SysCtrl.obj" "F2837xD_usDelay.obj" "can.obj" "interrupt.obj" "main.obj" "sources\CommandPriorityQueue.obj" "sources\General.obj" "sources\ISL94212.obj" "sources\Queue.obj" "sources\Timer.obj" "sources\adc.obj" "sources\check_for_alerts.obj" "sources\device_implementation.obj" "sources\fault_handling.obj" "sources\my_can.obj" "sources\spi.obj" "sources\uart.obj" 
+	-$(RM) "F2837xD_Adc.d" "F2837xD_DefaultISR.d" "F2837xD_GlobalVariableDefs.d" "F2837xD_Gpio.d" "F2837xD_Ipc.d" "F2837xD_PieCtrl.d" "F2837xD_PieVect.d" "F2837xD_SysCtrl.d" "can.d" "interrupt.d" "main.d" "sources\CommandPriorityQueue.d" "sources\General.d" "sources\ISL94212.d" "sources\Queue.d" "sources\Timer.d" "sources\adc.d" "sources\check_for_alerts.d" "sources\device_implementation.d" "sources\fault_handling.d" "sources\my_can.d" "sources\spi.d" "sources\uart.d" 
 	-$(RM) "F2837xD_CodeStartBranch.d" "F2837xD_usDelay.d" 
 	-@echo 'Finished clean'
 	-@echo ' '

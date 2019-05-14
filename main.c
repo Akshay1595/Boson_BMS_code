@@ -31,6 +31,7 @@ void main(void)
              COMMLEDToggle();
              GetISLData(NumISLDevices);
              DELAY_MS(INTERVAL);
+             checkForAlerts();
 #ifndef PARTIAL_LOG
              log_data();
 #else

@@ -31,6 +31,7 @@
 #include "Queue.h"
 #include "CommandPriorityQueue.h"
 #include "fault_handling.h"
+#include "check_alerts.h"
 
 //common definitions to all
 

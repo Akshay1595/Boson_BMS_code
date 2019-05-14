@@ -187,7 +187,7 @@ Uint8 GetMin(Uint16* Array, Uint8 Length){
 	}
 	return MinIndex;
 }
-#pragma CODE_SECTION(GetMax,".xtraCode")
+#pragma CODE_SECTION(GetMax,".bigCode")
 Uint8 GetMax(Uint16* Array, Uint8 Length){
 	Uint16 Max;
 	Uint8 i;
@@ -202,7 +202,7 @@ Uint8 GetMax(Uint16* Array, Uint8 Length){
 	}
 	return MaxIndex;
 }
-#pragma CODE_SECTION(GetAvg,".xtraCode")
+#pragma CODE_SECTION(GetAvg,".bigCode")
 Uint16 GetAvg(Uint16* Array, Uint8 Length){
 	Uint32 Sum;
 	Uint16 Avg;
@@ -307,6 +307,7 @@ void Setup() {
     COMMLEDSetup();
     COMLEDOff();
     ConfigureFaultSetup();
+    init_alert_task();
     //SPI_Test();
     Bool Did_it_blend;
 
