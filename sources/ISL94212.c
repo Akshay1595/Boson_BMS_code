@@ -19,8 +19,11 @@ ISL_COMMAND_GUESS ISLCommandGuess;
 ISL_FLAGS ISLFlags;
 ISL_PACKET ISLIdentify;
 
+#ifndef _FLASH
 #pragma DATA_SECTION (ISLDevices, ".isl_registers");
-ISL_DEVICE ISLDevices[ISL_MAX_DEVICES];
+#endif
+
+ISL_DEVICE ISLDevices[ISL_MAX_DEVICES] = {};
 
 
 Bool ISL_Init() {

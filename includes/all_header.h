@@ -38,6 +38,7 @@
 #define DEBUG
 #define PARTIAL_LOG
 
+//typedef unsigned char       Uint8;
 #define INTERVAL            200 //milliseconds
 #define MAX_DEVICES         4
 #define UV_LIMIT            2.7

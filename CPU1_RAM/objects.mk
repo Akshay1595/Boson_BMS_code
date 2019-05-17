@@ -4,5 +4,5 @@
 
 USER_OBJS :=
 
-LIBS := -lF2837xD_Headers_nonBIOS_cpu1.cmd -llibc.a
+LIBS := -llibc.a -lrts2800_fpu32.lib -lF2837xD_Headers_nonBIOS_cpu1.cmd
 

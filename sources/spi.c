@@ -15,8 +15,9 @@
 
 SPI_RECEIVE_BUFFER SPI_ReceiveBuffer;
 SPI_CALLBACKS SPICallbacks;
-
+#ifndef _FLASH
 #pragma CODE_SECTION(SPI_Init,".bigCode")
+#endif
 void SPI_Init() {
 
     unsigned char i;

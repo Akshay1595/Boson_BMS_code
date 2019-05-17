@@ -81,7 +81,10 @@ void ResetISR() {
 	return;
 }
 
+#ifndef _FLASH
 #pragma CODE_SECTION(InitializeISLParameters,".bigCode")
+#endif
+
 void InitializeISLParameters(Uint8 NumDevices){
 	Uint8 i=1;
 	Uint8 buf[16] = {};
@@ -150,7 +153,10 @@ Parameters* GetParameters(void){
 //So the point of checking the queue is to keep the bandwidth on the SPI Bus at the highest possible rate and not overflow it.
 //This also leads to the CANBUS remaing at a fixed bandwidth this could increase if the SPI rate increased
 //The result of this is that the more modules that are strung together the slower the update rate per module
+#ifndef _FLASH
 #pragma CODE_SECTION(GetISLData,".bigCode")
+#endif
+
 void GetISLData(Uint8 NumDevices){
 	Uint8 i;
 	//NumCellsBalancing=GetCellsInBalanceOut();
@@ -172,7 +178,9 @@ void GetISLData(Uint8 NumDevices){
 	}
 }
 
+#ifndef _FLASH
 #pragma CODE_SECTION(GetMin,".bigCode")
+#endif
 Uint8 GetMin(Uint16* Array, Uint8 Length){
 	Uint16 Min;
 	Uint8 i;
@@ -187,7 +195,9 @@ Uint8 GetMin(Uint16* Array, Uint8 Length){
 	}
 	return MinIndex;
 }
+#ifndef _FLASH
 #pragma CODE_SECTION(GetMax,".bigCode")
+#endif
 Uint8 GetMax(Uint16* Array, Uint8 Length){
 	Uint16 Max;
 	Uint8 i;
@@ -202,7 +212,9 @@ Uint8 GetMax(Uint16* Array, Uint8 Length){
 	}
 	return MaxIndex;
 }
+#ifndef _FLASH
 #pragma CODE_SECTION(GetAvg,".bigCode")
+#endif
 Uint16 GetAvg(Uint16* Array, Uint8 Length){
 	Uint32 Sum;
 	Uint16 Avg;
@@ -240,7 +252,9 @@ Uint16 GetCellsInBalance(void){
 	return CellsInBalance;
 }
 
+#ifndef _FLASH
 #pragma CODE_SECTION(Setup,".bigCode")
+#endif
 void Setup() {
 #ifdef _FLASH
     memcpy(&RamfuncsRunStart, &RamfuncsLoadStart, (size_t)&RamfuncsLoadSize);
@@ -295,7 +309,9 @@ void Setup() {
 
     //------------------------------UART init-----------------------------//
     uart_init();
-
+#ifdef DEBUG
+    uart_string("Initially Turning Off Contactor....!\r\n");
+#endif
     contactor_off();
 
 	//------------------------------Initialize ADC------------------------//
@@ -361,7 +377,7 @@ void Setup() {
 #ifdef DEBUG
     #ifdef PARTIAL_LOG
     uart_string(",,Device1,,,,,,Device2,,,,,,Device3,,,,,,Device4,,,,,\r\n");
-    uart_string("Vcmax,Vcmin,Vpack,Tcmin,Tcmax,,Vcmax,Vcmin,Vpack,Tcmin,Tcmax,,Vcmax,Vcmin,Vpack,Tcmin,Tcmax,,Vcmax,Vcmin,Vpack,Tcmin,Tcmax,AmbTemp,SOC\r\n");
+    uart_string("Vcmax,Vcmin,Vpack,Tcmin,Tcmax,,Vcmax,Vcmin,Vpack,Tcmin,Tcmax,,Vcmax,Vcmin,Vpack,Tcmin,Tcmax,,Vcmax,Vcmin,Vpack,Tcmin,Tcmax,AmbTemp,SOC,Vbat\r\n");
     #endif
 #endif
 }

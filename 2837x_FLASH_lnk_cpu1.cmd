@@ -70,6 +70,9 @@ SECTIONS
    .pinit              : > FLASHB,     PAGE = 0, ALIGN(4)
    .text               : >> FLASHB | FLASHC | FLASHD | FLASHE      PAGE = 0, ALIGN(4)
    codestart           : > BEGIN       PAGE = 0, ALIGN(4)
+	//.bigCode		   : >> FLASHI	   PAGE = 0 ALIGN(4)
+	//.isl_registers	   : >> FLASHJ	   PAGE = 0 ALIGN(4)
+	//.device_data 	   : >> RAMGS13	   PAGE = 1
 
 #ifdef __TI_COMPILER_VERSION__
    #if __TI_COMPILER_VERSION__ >= 15009000

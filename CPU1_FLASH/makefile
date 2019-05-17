@@ -4,7 +4,7 @@
 
 SHELL = cmd.exe
 
-CG_TOOL_ROOT := C:/ti/ccsv8/tools/compiler/ti-cgt_c2000_18.1.3.LTS
+CG_TOOL_ROOT := C:/ti/ccs901/ccs/tools/compiler/ti-cgt-c2000_18.12.1.LTS
 
 GEN_OPTS__FLAG := 
 GEN_CMDS__FLAG := 
@@ -167,14 +167,14 @@ all: can_external_transmit_cpu01.out
 can_external_transmit_cpu01.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: C2000 Linker'
-	"C:/ti/ccsv8/tools/compiler/ti-cgt_c2000_18.1.3.LTS/bin/cl2000" -v28 -ml -mt --cla_support=cla1 --float_support=fpu32 --tmu_support=tmu0 --vcu_support=vcu2 --define=CPU1 --define=_FLASH -z --stack_size=0x200 --warn_sections -i"C:/ti/ccsv8/tools/compiler/ti-cgt_c2000_18.1.3.LTS/lib" -i"C:/ti/ccsv8/tools/compiler/ti-cgt_c2000_18.1.3.LTS/include" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/F2837xD_common/cmd" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/F2837xD_headers/cmd" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/common/cmd" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/headers/cmd" --reread_libs --rom_model -o "can_external_transmit_cpu01.out" $(ORDERED_OBJS)
+	"C:/ti/ccs901/ccs/tools/compiler/ti-cgt-c2000_18.12.1.LTS/bin/cl2000" -v28 -ml -mt --cla_support=cla1 --float_support=fpu32 --tmu_support=tmu0 --vcu_support=vcu2 --define=CPU1 --define=_FLASH --abi=coffabi -z --stack_size=0x200 --warn_sections -i"C:/ti/ccs901/ccs/tools/compiler/ti-cgt-c2000_18.12.1.LTS/lib" -i"C:/ti/ccs901/ccs/tools/compiler/ti-cgt-c2000_18.12.1.LTS/include" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/F2837xD_common/cmd" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/F2837xD_headers/cmd" -i"C:/ti/c2000/C2000Ware_1_00_06_00/device_support/f2837xd/headers/cmd" --reread_libs --rom_model -o "can_external_transmit_cpu01.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
 can_external_transmit_cpu01.hex: $(EXE_OUTPUTS)
 	@echo 'Building files: $(strip $(EXE_OUTPUTS__QUOTED))'
 	@echo 'Invoking: C2000 Hex Utility'
-	"C:/ti/ccsv8/tools/compiler/ti-cgt_c2000_18.1.3.LTS/bin/hex2000"  -o "can_external_transmit_cpu01.hex" $(EXE_OUTPUTS__QUOTED)
+	"C:/ti/ccs901/ccs/tools/compiler/ti-cgt-c2000_18.12.1.LTS/bin/hex2000"  -o "can_external_transmit_cpu01.hex" $(EXE_OUTPUTS__QUOTED)
 	@echo 'Finished building: $(strip $(EXE_OUTPUTS__QUOTED))'
 	@echo ' '
 

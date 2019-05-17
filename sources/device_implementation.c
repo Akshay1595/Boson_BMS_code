@@ -193,7 +193,9 @@ void contactor_gpio_setup()
 }
 
 //calculation of SOC based on lookup table
+#ifndef _FLASH
 #pragma CODE_SECTION(get_current_soc,".bigCode")
+#endif
 float get_current_soc(void)
 {
 
@@ -533,6 +535,9 @@ void partial_log()
             uart_string(buf);
             uart_xmit(',');
             float_to_ascii(get_current_soc(), buf);
+            uart_string(buf);
+            uart_xmit(',');
+            float_to_ascii(get_battery_voltage(), buf);
             uart_string(buf);
             uart_string("\r\n");
         }

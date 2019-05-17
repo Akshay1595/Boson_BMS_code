@@ -18,7 +18,9 @@ volatile alert_data alert_msgdata;
 //
 //This function initializes the CAN message required for a AlertMessages
 //
+#ifndef _FLASH
 #pragma CODE_SECTION(init_alert_task,".bigCode")
+#endif
 void init_alert_task(void)
 {
     alertmailbox.pucMsgData = (void *)&alert_msgdata;
@@ -30,7 +32,9 @@ void init_alert_task(void)
 //
 // This function checks if we reach the threshold or not?
 //
+#ifndef _FLASH
 #pragma CODE_SECTION(checkForAlerts,".bigCode")
+#endif
 void checkForAlerts(void)
 {
     ISL_DEVICE *ISLData;
@@ -100,7 +104,9 @@ void checkForAlerts(void)
 //
 //This function sends a CAN message with all the parameters
 //
+#ifndef _FLASH
 #pragma CODE_SECTION(inform_ecu,".bigCode")
+#endif
 void inform_ecu(Uint8 fault_code,Uint8 device,Uint8 cell_no)
 {
     alert_msgdata.AlertCode = fault_code;
@@ -120,7 +126,9 @@ void inform_ecu(Uint8 fault_code,Uint8 device,Uint8 cell_no)
 //
 //This function will give you current value for particular fault
 //
+#ifndef _FLASH
 #pragma CODE_SECTION(getValueNow,".bigCode")
+#endif
 Uint16 getValueNow(Uint8 fault_code,Uint8 device,Uint8 cell_no)
 {
     Uint8 buff[64]={};

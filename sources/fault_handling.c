@@ -132,7 +132,9 @@ void alert_ecu()
 
 }
 
+#ifndef _FLASH
 #pragma CODE_SECTION(handle_fault,".bigCode")
+#endif
 void handle_fault(void)
 {
     // initially check for communication failure
@@ -217,8 +219,9 @@ void clear_all_fault(void)
     for(device = 1;device <= NumISLDevices; device++)
         ISL_WriteRegister(device,2,0x04,Reset);                                                      //reset all the pages one by one
 }
-
+#ifndef _FLASH
 #pragma CODE_SECTION(get_threshold_value,".bigCode")
+#endif
 Uint16 get_threshold_value(Uint8 fault_code)
 {
     Uint16 Value;
@@ -242,8 +245,9 @@ Uint16 get_threshold_value(Uint8 fault_code)
             return 0xFFFF;
     }
 }
-
+#ifndef _FLASH
 #pragma CODE_SECTION(get_current_value,".bigCode")
+#endif
 Uint16 get_current_value(Uint8 FaultCode,Uint8 device,Uint8 cell_no)
 {
     Uint16 currentValue=0x00;

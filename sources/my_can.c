@@ -133,7 +133,9 @@ void can_receive_mailbox(tCANMsgObject* load_mailbox)
 }
 
 // The RecieveHandler code runs every time data is recieved from the ISL chips this triggers everything else to work
+#ifndef _FLASH
 #pragma CODE_SECTION(RecieveHandler,".bigCode")
+#endif
 void RecieveHandler() {
     Uint8 Header;
     RecieveFlags=GetISLFlags();                                                                 // Pass the Flags
@@ -259,14 +261,14 @@ void PackAndSendCellDetails()
         temp_array[i*4+1]   = ISL_Struct->PAGE1.TEMP.ET2V;
         temp_array[i*4+2]   = ISL_Struct->PAGE1.TEMP.ET3V;
         temp_array[i*4+3]   = ISL_Struct->PAGE1.TEMP.ET4V;
-
-        Vbat += ISL_Struct->PAGE1.CELLV.VB;
     }
 
     Vcmax = (0x3FFF) & (voltage_array[GetMax(voltage_array, (7*NumISLDevices))]);
     Vcmin = (0x3FFF) & (voltage_array[GetMin(voltage_array, (7*NumISLDevices))]);
     Tcmax = (0x3FFF) & (temp_array[GetMin(temp_array, 4*MAX_DEVICES)]);
     Tcmin = (0x3FFF) & (temp_array[GetMax(temp_array, 4*MAX_DEVICES)]);
+    double currentBattV = get_battery_voltage();
+    Vbat = currentBattV/1000.00 * ((int16)32767);
 
     Soc = (unsigned char)((get_current_soc()/100.00)*255);
     Current = GetNowCurrent();
