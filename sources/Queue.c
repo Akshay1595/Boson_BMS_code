@@ -9,9 +9,7 @@
  *
  */
 
-#include "F28x_Project.h"     // Device Headerfile and Examples Include File
-#include "General.h"
-#include "Queue.h"
+#include "all_header.h"
 
 
 void Queue_Flush(QUEUE* q){

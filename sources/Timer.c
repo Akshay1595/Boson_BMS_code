@@ -9,10 +9,7 @@
  * Copyright 2014	
  */
 
-#include "F28x_Project.h"     // Device Headerfile and Examples Include File
-#include "General.h"
-#include "Timer.h"
-//#include "CAN.h"
+#include "all_header.h"
 
 TMR_CALLBACKS TimerCallbacks;
 
@@ -70,6 +67,10 @@ void TMR_Init() {
     PieCtrlRegs.PIEIER3.bit.INTx3 = PWM_INT_ENABLE;
     PieCtrlRegs.PIEIER3.bit.INTx4 = PWM_INT_ENABLE;
 	EnableISR();
+
+#ifdef DEBUG
+    uart_string("Timer Setup Complete!\r\n");
+#endif
 }
 
 /**

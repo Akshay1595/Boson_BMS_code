@@ -62,10 +62,12 @@ SECTIONS
    .pinit           : > RAMM0,     PAGE = 0
    .switch          : > RAMM0,     PAGE = 0
    .reset           : > RESET,     PAGE = 0, TYPE = DSECT /* not used, */
-
+	.xtraCode		: >	RAMGS6 | RAMGS7 , 	PAGE = 1
+	.bigCode		: > RAMGS9 | RAMGS10 | RAMGS11 | RAMGS12 ,	PAGE = 1
+	.isl_registers	: > RAMGS13| RAMGS14 | RAMGS15, PAGE = 1
    .stack           : > RAMM1,     PAGE = 1
    .ebss            : > RAMGS5,    PAGE = 1
-   .econst          : > RAMLS5,    PAGE = 1
+   .econst          : > RAMLS5| RAMGS8,    PAGE = 1
    .esysmem         : > RAMLS5,    PAGE = 1
    Filter_RegsFile  : > RAMGS0,	   PAGE = 1
 

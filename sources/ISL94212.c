@@ -9,11 +9,7 @@
  *
  */
 
-#include "F28x_Project.h"     // Device Headerfile and Examples Include File
-#include "Timer.h"
-#include "ISL94212.h"
-#include "CommandPriorityQueue.h"
-#include "SPI.h"
+#include "all_header.h"
 
 ISL_CALLBACKS ISLCallbacks;
 ISL_STATE ISLState;
@@ -23,8 +19,11 @@ ISL_COMMAND_GUESS ISLCommandGuess;
 ISL_FLAGS ISLFlags;
 ISL_PACKET ISLIdentify;
 
+#ifndef _FLASH
 #pragma DATA_SECTION (ISLDevices, ".isl_registers");
-ISL_DEVICE ISLDevices[ISL_MAX_DEVICES];
+#endif
+
+ISL_DEVICE ISLDevices[ISL_MAX_DEVICES] = {};
 
 
 Bool ISL_Init() {

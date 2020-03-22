@@ -10,10 +10,23 @@
 #ifndef DEVICE_IMPLEMENTATION_H_
 #define DEVICE_IMPLEMENTATION_H_
 
+#define CONTACTOR_PIN 25
+
 #include "F28x_project.h"
 #include "ISL94212.h"
 
-#define MAX_CELL_NUMBER 12
+
+typedef enum  {
+    degC_25=25,
+    degC_30=30,
+    degC_35=35,
+    degC_40=40,
+    degC_45=45,
+    degC_50=50,
+    degC_55=55,
+    degC_60=60,
+}TEMP_LOOKUP_INDEX;
+
 
 typedef enum  {
     VB=0,
@@ -36,26 +49,30 @@ typedef enum{
     pack = 1
 }CELL_OR_PACK;
 
-
 extern Uint16 NowCurrent;
+
+void COMMLEDSetup(void);
+void COMLEDOn(void);
+void COMLEDOff(void);
+void COMMLEDToggle(void);
 
 double ConvertTemperature(Uint16 Raw);
 double read_temp(Uint8 device,Uint8 temp_sensor_no);
 Uint16 read_voltage(Uint8 device,Uint8 cell_no);
 float get_float_value_for_voltage(Uint16 voltage, CELL_OR_PACK cell_or_pack);
 Uint16 read_current(void);
-Uint16 get_current_soc(void);
 void balance_on(Uint8 device,Uint8 cell_no);
 void balance_off(Uint8 device,Uint8 cell_no);
 void balance_all(Uint8 device,Uint16 all_data);
 void contactor_on(void);
 void contactor_off(void);
-Uint16 get_current_soc(void);
+void contactor_gpio_setup(void);
+double get_battery_voltage(void);
 void log_data(void);
-void set_over_temperature_limit(Uint8 device,double degreeC);
+void partial_log(void);
+void set_over_temperature_limit(Uint8 device,Uint8 degreeC);
 void write_undervoltage_threshold(Uint8 device,float uv_voltage);
 void write_overvoltage_threshold(Uint8 device,float ov_voltage);
 void disable_cell_from_faulting(Uint8 device,Uint8*array);
-Uint16 get_current_soc(void);
-
+float get_current_soc(void);
 #endif /* DEVICE_IMPLEMENTATION_H_ */

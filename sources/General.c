@@ -9,16 +9,12 @@
  *
  */
 
-#include "F28x_Project.h"     // Device Headerfile and Examples Include File
-#include "General.h"
-#include "ISL94212.h"
-#include "adc.h"
-#include <math.h>
-#include "uart.h"
-#include "device_implementation.h"
-//#include "my_can.h"
-
-
+#include "all_header.h"
+//
+// Globals
+//
+extern Uint8 FailCounter;
+Uint8 NumISLDevices=0x00;
 Uint8 GNR_ISRDepth=0;
 Uint8 BalanceEnable[2];
 Uint8 UnderVoltageLimit[2];
@@ -30,7 +26,6 @@ Uint8 DeviceSetup[2];
 Uint8 CellSetup[2];
 Uint8 OverTempLimit[2];
 Uint8 Reset[2];
-SummaryFaults AllFaults;
 ShelfArray OverTempAgg;
 Uint8 Zero[2];
 Uint8* NumCellsBalancing;
@@ -86,67 +81,55 @@ void ResetISR() {
 	return;
 }
 
-void ToggleLED(Uint8 led) {
-
-	if(led == 0) { GpioDataRegs.GPATOGGLE.bit.GPIO31 = 1; }
-	if(led == 1) { GpioDataRegs.GPBTOGGLE.bit.GPIO34 = 1; }
-}
-#pragma CODE_SECTION(SetGPIO,".xtraCode")
-void SetGPIO(Uint16 GPIOPin){
-	if(GPIOPin>=32 && GPIOPin<=44){
-		GpioDataRegs.GPBSET.all=1<<(GPIOPin-32);
-	}
-	else if(GPIOPin>=0 && GPIOPin <= 31){
-		GpioDataRegs.GPASET.all=1<<GPIOPin;
-	}
-}
-
-void ClearGPIO(Uint16 GPIOPin){
-	if(GPIOPin>=32 && GPIOPin<=44){
-		GpioDataRegs.GPBCLEAR.all=1<<(GPIOPin-32);
-	}
-	else if(GPIOPin>=0 && GPIOPin <= 31){
-		GpioDataRegs.GPACLEAR.all=1<<GPIOPin;
-	}
-}
-
-void LEDOn(LED Color){
-	SetGPIO(Color);
-}
-
-void LEDOff(LED Color){
-	ClearGPIO(Color);
-}
-
+#ifndef _FLASH
 #pragma CODE_SECTION(InitializeISLParameters,".bigCode")
+#endif
+
 void InitializeISLParameters(Uint8 NumDevices){
 	Uint8 i=1;
+	Uint8 buf[16] = {};
+	Uint8 Fault_setup[2] = {};
 	BalanceEnable[1]=0x1;
 	BalanceEnable[0]=0x2;
 	DeviceSetup[0]=0x00;
 	DeviceSetup[1]=0x80;																		//Dont  Measure while balancing
-	Uint8 disable_cell_array[12] = {0,0,0,0, 0,0,0,0, 0,0,0,0};                                  // we dont want to disable any cell hence we are keeping
+	Uint8 disable_cell_array[12] = {0,0,0,0, 1,1,1,1, 1,0,0,0};                                  // we dont want to disable any cell hence we are keeping
 	                                                                                            // all zeros if cell1 we want to disable arr[0] = 1
+	Fault_setup[1]  = 0x60; //default tot0 and tot1 to 11 which takes 8 sample at scan interval of 16ms
+	Fault_setup[0]  = 0x1F; //enable external temperature devices to fault
+
 	OverTempLimit[1]=0x9D;
 	OverTempLimit[0]=0x0C;																	//Set overtemp to 55 Degrees C
 	Reset[1]=0;
 	Reset[0]=0;
 
+#ifdef DEBUG
+	uart_string("UV Limit set to = ");
+	float_to_ascii(UV_LIMIT, buf);
+	uart_string(buf);
+	uart_string_newline("OV_limit set to = ");
+	float_to_ascii(OV_LIMIT, buf);
+    uart_string(buf);
+    uart_string_newline("OVTF limit set to = ");
+    my_itoa(OT_LIMIT, buf);
+    uart_string(buf);
+    uart_string("degreeC\r\n");
+#endif
+
     for(i=1;i<=NumDevices;i++){
-
+        set_over_temperature_limit(i,OT_LIMIT);
+        ISL_WriteRegister(i,2,0x03, Fault_setup);                                               // allow external temperature measurement to set fault bits
     	ISL_WriteRegister(i,2,0x13, BalanceEnable); 											// This Initializes to Manual Mode and the Enable bit Set
-
-    	write_undervoltage_threshold(i,1.05);                                                   //sets undervoltage threshold
-    	write_overvoltage_threshold(i, 2.05);                                                   //sets overvoltage threshold
+    	write_undervoltage_threshold(i,UV_LIMIT);                                                   //sets under_voltage threshold
+    	write_overvoltage_threshold(i, OV_LIMIT);                                                   //sets over_voltage threshold
     	ISL_WriteRegister(i,2,0x19,DeviceSetup);												// Disable Measure while balancing this doesn't work in manual mode
-    	disable_cell_from_faulting(i, disable_cell_array);
-    	ISL_WriteRegister(i,2,0x12,OverTempLimit);												// Set OverTemp to 55 Degrees C
-    	ISL_WriteRegister(i,2,0x00,Reset);
+    	disable_cell_from_faulting(i, disable_cell_array);                                      //disable some cells from faulting
+    	ISL_WriteRegister(i,2,0x00,Reset);                                                      //reset all the pages one by one
     	ISL_WriteRegister(i,2,0x01,Reset);
     	ISL_WriteRegister(i,2,0x02,Reset);
     	ISL_Request(i, SCAN_CONTINOUS);                                                         // Set to Scan Continuously
+    	ISL_WriteRegister(i, 2, 0x04, Reset);                                     //clear fault status register
     	DELAY_S(1);
-
     }
 }
 
@@ -170,10 +153,14 @@ Parameters* GetParameters(void){
 //So the point of checking the queue is to keep the bandwidth on the SPI Bus at the highest possible rate and not overflow it.
 //This also leads to the CANBUS remaing at a fixed bandwidth this could increase if the SPI rate increased
 //The result of this is that the more modules that are strung together the slower the update rate per module
+#ifndef _FLASH
 #pragma CODE_SECTION(GetISLData,".bigCode")
+#endif
+
 void GetISLData(Uint8 NumDevices){
 	Uint8 i;
 	//NumCellsBalancing=GetCellsInBalanceOut();
+	checkForCommFailure();                                                                      //check if communication failure is there
 	if(CPQ_Empty()==True){																		// Every loop check to see if the queue is empty
 		if(*NumCellsBalancing>0){
 		DELAY_MS(AllParameters.Balance.BleedResistorDelay);
@@ -189,10 +176,11 @@ void GetISLData(Uint8 NumDevices){
 
 		}
 	}
-
 }
 
+#ifndef _FLASH
 #pragma CODE_SECTION(GetMin,".bigCode")
+#endif
 Uint8 GetMin(Uint16* Array, Uint8 Length){
 	Uint16 Min;
 	Uint8 i;
@@ -207,7 +195,9 @@ Uint8 GetMin(Uint16* Array, Uint8 Length){
 	}
 	return MinIndex;
 }
-#pragma CODE_SECTION(GetMax,".xtraCode")
+#ifndef _FLASH
+#pragma CODE_SECTION(GetMax,".bigCode")
+#endif
 Uint8 GetMax(Uint16* Array, Uint8 Length){
 	Uint16 Max;
 	Uint8 i;
@@ -222,7 +212,9 @@ Uint8 GetMax(Uint16* Array, Uint8 Length){
 	}
 	return MaxIndex;
 }
-#pragma CODE_SECTION(GetAvg,".xtraCode")
+#ifndef _FLASH
+#pragma CODE_SECTION(GetAvg,".bigCode")
+#endif
 Uint16 GetAvg(Uint16* Array, Uint8 Length){
 	Uint32 Sum;
 	Uint16 Avg;
@@ -260,84 +252,15 @@ Uint16 GetCellsInBalance(void){
 	return CellsInBalance;
 }
 
-SummaryFaults* CheckFaults(Uint8 device){
-	ISL_DEVICE* ISLData = GetISLDevices(device);												//Get the Current Module
-	if((ISLData->PAGE2_1.FAULT.OC.all & ~(7<<5))>0){
-		AllFaults.OpenWire=True;
-	}
-	if((ISLData->PAGE2_1.FAULT.OF.all & ~(7<<5))>0){
-		AllFaults.OverVoltage=True;
-	}
-	if((ISLData->PAGE2_1.FAULT.UF.all & ~(7<<5))>0){
-		AllFaults.UnderVoltage=True;
-	}
-	if((ISLData->PAGE2_1.FAULT.OVTF.all)>0){
-		AllFaults.OverTemp=True;
-	}
-}
-
-
-// The balance cells function trips the balance resistors based on whether or not they are currently on and what the current voltage is
-// when it trips it then checks to see if the voltage has fallen below the threshold minus the hysteresis 
-#pragma CODE_SECTION(BalanceCells,".xtraCode")
-void BalanceCells(Uint16 CurrentDevice){
-	ISL_DEVICE* ISLData;
-	Uint16 BalanceOut=0x0000;
-	Uint8 BalanceChip[2];
-	Uint16 stuff;
-	Uint8 i;
-	Uint16 BalanceThresholdOn=(((1<<13)/5)*1.64);																				//2^12/2.5*Number so 1.5 for now
-	Uint16 BalanceThresholdOff=BalanceThresholdOn-(((1<<13)/5)*.05);															//2^12/2.5*Number so 1.45 for now
-	Parameters* SystemParameters;
-	SystemParameters= GetParameters();
-	BalanceChip[0]=0x00;
-	BalanceChip[1]=0x00;
-	ISLData = GetISLDevices(CurrentDevice);
-	BalanceOut=(*ISLData).PAGE2_2.SETUP.BSTAT.all;
-	if((*SystemParameters).Balance.Enable==True){
-		for (i=0;i<12;){
-			if((*(((Uint16*)(&((*ISLData).PAGE2_2.SETUP.BSTAT.all))))&(1<<i))>0){
-				if(*(((Uint16*)(&((*ISLData).PAGE1.CELLV.C1V)))+i)<((*SystemParameters).Balance.TopBalanceVoltage-(*SystemParameters).Balance.BalanceHysteresis)){
-					BalanceOut &= ~(1<<i);
-				}
-				else{
-					//Do Something
-				}
-			}
-		else{
-				if(*(((Uint16*)(&((*ISLData).PAGE1.CELLV.C1V)))+i)>(*SystemParameters).Balance.TopBalanceVoltage){
-					BalanceOut |= (1<<i);
-				}
-				else{
-					//Do Something
-				}
-			}
-		i++;
-			if(i==4){
-				i=7;
-			}
-		}
-	BalanceOut &= 0x0F8F;
-	}
-	else{
-		BalanceOut=0;
-	}
-	if (BalanceOut==0){
-		LEDOff(BLUE);
-	}
-	else{
-		LEDOn(BLUE);
-	}
-	BalanceChip[0]=((BalanceOut>>8) & 0xFF);
-	BalanceChip[1]=((BalanceOut) & 0x00FF);		//Bit Shift them to the right locations Chip 1 is 0-9
-	//ISL_COMMAND deivce number is (2*Module)-1 for one and no minus 1 for the second
-	ISL_Command(CurrentDevice+1,2,0x14,1,BalanceChip,2, 0);
-
-}
-
+#ifndef _FLASH
 #pragma CODE_SECTION(Setup,".bigCode")
+#endif
 void Setup() {
-	Parameters* InitialParameters;
+#ifdef _FLASH
+    memcpy(&RamfuncsRunStart, &RamfuncsLoadStart, (size_t)&RamfuncsLoadSize);
+#endif
+
+    DisableISR();
 
     // Initialize System Control:
     // PLL, WatchDog, enable Peripheral Clocks
@@ -376,38 +299,143 @@ void Setup() {
 
     // Setup GPIO LED
 	EALLOW;
-	//GPIO Module Enable Pin
-	GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 0;										// 0=GPIO,  1=CANTX-A,  2=Resv,  3=Resv
-	GpioCtrlRegs.GPADIR.bit.GPIO0 = 1;										// 1=OUTput,  0=INput
-	GpioDataRegs.GPASET.bit.GPIO0 = 1;										// Set High initially
-
-
-	//GPIO Fault Read Pin
-	GpioCtrlRegs.GPAMUX1.bit.GPIO2 = 0;										// 0=GPIO,  1=CANTX-A,  2=Resv,  3=Resv
-	GpioCtrlRegs.GPADIR.bit.GPIO2 = 0;										// 1=OUTput,  0=INput
-
-
-	//GPIO BLUE LED
-	GpioCtrlRegs.GPBMUX1.bit.GPIO34 = 0;										// 0=GPIO,  1=CANTX-A,  2=Resv,  3=Resv
-	GpioCtrlRegs.GPBDIR.bit.GPIO34 = 1;										// 1=OUTput,  0=INput
-	GpioDataRegs.GPBCLEAR.bit.GPIO34 = 1;										// Set Low
 
 	//GPIO GREEN LED FOR CONTACTOR
 	GpioCtrlRegs.GPAMUX2.bit.GPIO31 = 0;										// 0=GPIO,  1=CANTX-A,  2=Resv,  3=Resv
 	GpioCtrlRegs.GPADIR.bit.GPIO31 = 1;										// 1=OUTput,  0=INput
 	GpioDataRegs.GPASET.bit.GPIO31 = 1;										// Set High initially
 
-	//GPIO REDLED
-	GpioCtrlRegs.GPAMUX1.bit.GPIO10 = 0;										// 0=GPIO,  1=CANTX-A,  2=Resv,  3=Resv
-	GpioCtrlRegs.GPADIR.bit.GPIO10 = 1;										// 1=OUTput,  0=INput
-	GpioDataRegs.GPASET.bit.GPIO10 = 1;										// Set High initially
-
 	EDIS;
 
+    //------------------------------UART init-----------------------------//
+    uart_init();
+#ifdef DEBUG
+    uart_string("Initially Turning Off Contactor....!\r\n");
+#endif
+    contactor_off();
+
 	//------------------------------Initialize ADC------------------------//
+    contactor_gpio_setup();
 	setup_adc();
-	//------------------------------UART init-----------------------------//
-	uart_init();
+    TMR_Init();
+    SPI_Init();
+    can_init();
+    COMMLEDSetup();
+    COMLEDOff();
+    ConfigureFaultSetup();
+    init_alert_task();
+    //SPI_Test();
+    Bool Did_it_blend;
+
+    Did_it_blend = ISL_Init_Retry(2);
+
+    if (Did_it_blend == True)
+    {
+        COMLEDOn();
+#ifdef DEBUG
+        uart_string("Yes it has connected Successfully!\r\n");
+#endif
+    }
+    else
+    {
+#ifdef DEBUG
+        uart_string("I couldn't find ISL devices!\r\n");
+#endif
+        FaultLEDOn();
+        while(1);
+    }
+
+    ResetISR();
+
+    NumISLDevices=NumDevices();
+    ISL_EnableReceiveCallback();                                            // Enable the recieve call back
+    ISL_SetReceiveCallback(RecieveHandler);                                 // Set the recievehandler to call when data is recieved from the daisy chain
+
+    Uint8 _buf[8] = {};
+#ifdef DEBUG
+    uart_string("There are ");
+#endif
+    my_itoa(NumISLDevices, _buf);
+    uart_string(_buf);
+#ifdef DEBUG
+    uart_string(" devices!\r\n");
+#endif
+
+#ifdef DEBUG
+    uart_string("Setup Complete!\r\n");
+#endif
+
+    InitializeISLParameters(NumISLDevices);                                 // Initialize the default values into the ISL Registers
+
+    GetISLData(NumISLDevices);                                              //read before turning On Contactor
+    DELAY_S(2);
+    fault_isr();
+    contactor_on();
+    DELAY_S(1);
+
+
+#ifdef DEBUG
+    #ifdef PARTIAL_LOG
+    uart_string(",,Device1,,,,,,Device2,,,,,,Device3,,,,,,Device4,,,,,\r\n");
+    uart_string("Vcmax,Vcmin,Vpack,Tcmin,Tcmax,,Vcmax,Vcmin,Vpack,Tcmin,Tcmax,,Vcmax,Vcmin,Vpack,Tcmin,Tcmax,,Vcmax,Vcmin,Vpack,Tcmin,Tcmax,AmbTemp,SOC,Vbat\r\n");
+    #endif
+#endif
 }
 
+//
+//This function checks if communication failure is there and if there it calls handle for it
+//
+void checkForCommFailure(void)
+{
+    ISL_FLAGS* RecieveFlags;
+    RecieveFlags=GetISLFlags();
+    if( RecieveFlags->timeout == True || (RecieveFlags->newAck == False && RecieveFlags->newData == False ))
+    {
+        // If we do not get any data out of ISL devices raise a bug and say that it has failed.. Let him reconnect
+        FailCounter++;
+    }
+    if ( FailCounter > 4 )
+    {
+        handle_comm_failure();
+    }
+}
 
+//
+// This code is to handle the Communication failure
+//
+void handle_comm_failure(void)
+{
+    //keeping fault counter = 0 to restart
+    FailCounter = 0;
+    //disable recv_call back first since there is no need to send continuous CAN message now
+    CPQ_Flush();
+    ISL_DisableReceiveCallback();
+    FaultLEDOn();
+#ifdef DEBUG
+    uart_string("Communication has failed\r\n");
+    uart_string("Retrying...\r\n");
+#endif
+    while(ISL_Init_Retry(2) == False);
+#ifdef DEBUG
+    uart_string("Communication restored......!\r\n");
+#endif
+    NumISLDevices=NumDevices();
+    clear_all_fault();clear_all_fault();//try to clear all faults
+    InitializeISLParameters(NumISLDevices);
+#ifdef DEBUG
+    Uint8 _buf[8]={};
+    uart_string("There are ");
+    my_itoa(NumISLDevices, _buf);
+    uart_string(_buf);
+    uart_string(" devices!\r\n");
+#endif
+    fault_isr();
+    ISL_ResetFlags();
+    GetISLData(NumISLDevices);
+    //DELAY_S(1);
+    ISL_EnableReceiveCallback();
+    ISL_SetReceiveCallback(RecieveHandler);                 // Set the call back to the recieve handler
+    FaultLEDOff();
+    //System restored, now try sending can messages again
+
+}

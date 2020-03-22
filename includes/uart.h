@@ -17,11 +17,12 @@
 void uart_init(void);
 void gpio_uart_init(void);
 Uint8 uart_get_char(void);
+void uart_xmit(int a);
 void uart_string(Uint8 * msg);
 void uart_receive_buffer(Uint8 *buf);
 void uart_string_newline(Uint8* buf);
-void my_itoa(Uint16 a,char *buf);
-void reverse(char *str, int len);
+void my_itoa(int16 a,Uint8* buf);
+void reverse(Uint8 *str, int len);
 void float_to_ascii( double number,Uint8 *buf);
 
 #endif /* INCLUDES_UART_H_ */

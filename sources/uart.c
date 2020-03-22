@@ -4,9 +4,7 @@
  *  Created on: Mar 23, 2019
  *      Author: Akshay Godase
  */
-#include "F28x_project.h"
-#include "uart.h"
-#include <string.h>
+#include "all_header.h"
 /*
  * This function inits GPIO9 and GPIO8 as UART RX and TX pin resp.
  */
@@ -44,9 +42,11 @@ void uart_init()
     // SCIA at 9600 baud
     // @LSPCLK = 50 MHz (200 MHz SYSCLK) HBAUD = 0x02 and LBAUD = 0x8B.
     // @LSPCLK = 30 MHz (120 MHz SYSCLK) HBAUD = 0x01 and LBAUD = 0x86.
-    //
-    SciaRegs.SCIHBAUD.all = 0x0002;
-    SciaRegs.SCILBAUD.all = 0x008B;
+
+    // SCIA at 115200 baud
+    //@LSPCLK = 50 MHz (200 MHz SYSCLK) HBAUD = 0x00 and LBAUD = 0x36.
+    SciaRegs.SCIHBAUD.all = 0x0000;
+    SciaRegs.SCILBAUD.all = 0x0036;
 
     SciaRegs.SCICTL1.all = 0x0023;  // Relinquish SCI from Reset
 
@@ -126,8 +126,14 @@ void uart_receive_buffer(Uint8 *buf)
 /*
  *  Description: myitoa implementation
  */
-void my_itoa(Uint16 a,char *buf)
+void my_itoa(int16 a,Uint8* buf)
 {
+    if (a < 0)
+    {
+        buf[0] = '-';
+        buf++;
+        a = a * -1;
+    }
     int index = 0;
     if(a == 0)
     {
@@ -142,7 +148,7 @@ void my_itoa(Uint16 a,char *buf)
     int len = strlen(buf);
     reverse(buf,len);
 }
-void reverse(char *str, int len)
+void reverse(Uint8 *str, int len)
 {
     int i=0, j=len-1, temp;
     while (i<j)
@@ -155,11 +161,38 @@ void reverse(char *str, int len)
 }
 void float_to_ascii(double number,Uint8 *buf)
 {
+    if (number < 0)
+    {
+        buf[0] = '-';
+        buf++;
+        number = number * -1;
+    }
     Uint16 i_num = number;
     my_itoa(i_num,buf);
     strcat(buf,".");
     Uint16 float_num = ((Uint32)((double)number * 1000)) - (Uint32)(i_num*1000);
     char buf2[10] = {};
-    my_itoa(float_num,buf2);
-    strcat(buf,buf2);
+    if (float_num < 100)
+    {
+        if(float_num < 10)
+        {
+            strcpy(buf2,"00");
+            my_itoa(float_num,buf2+2);
+        }
+        else if(float_num == 0)
+        {
+            strcpy(buf2,"000");
+        }
+        else
+        {
+            strcpy(buf2,"0");
+            my_itoa(float_num,buf2+1);
+        }
+        strcat(buf,buf2);
+    }
+    else
+    {
+        my_itoa(float_num,buf2);
+        strcat(buf,buf2);
+    }
 }

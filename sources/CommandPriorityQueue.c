@@ -9,11 +9,7 @@
  */
 
 
-#include "F28x_Project.h"     // Device Headerfile and Examples Include File
-#include "General.h"
-#include "Queue.h"
-#include "CommandPriorityQueue.h"
-#include "ISL94212.h"
+#include "all_header.h"
 
 QUEUE q[CPQ_MAX_PRIORITIES];
 
